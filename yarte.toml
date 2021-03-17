@@ -1,0 +1,15 @@
+# root dir of templates
+[main]
+dir = "templates"
+
+# Alias for partials. In call, change the start of partial path with one of this, if exist.
+[partials]
+
+[debug]
+# prettyprint themes, put anything for options
+theme = "zenburn"
+grid = true
+header = true
+number_line = true
+paging = false
+short = false

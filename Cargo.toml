@@ -1,0 +1,62 @@
+[package]
+name = "kebisafe"
+version = "0.1.0"
+authors = ["kb10uy <kb10uy@kb10uy.org>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies.anyhow]
+version = "1.0.38"
+
+[dependencies.once_cell]
+version = "1.7.2"
+
+[dependencies.log]
+version= "0.4.14"
+
+[dependencies.pretty_env_logger]
+version = "0.4.0"
+
+[dependencies.chrono]
+version = "0.4.19"
+features = ["serde"]
+
+[dependencies.regex]
+version = "1.4.5"
+
+[dependencies.async-std]
+version = "1.9.0"
+features = ["attributes"]
+
+[dependencies.async-trait]
+version = "0.1.48"
+
+[dependencies.futures]
+version = "0.3.13"
+
+[dependencies.serde]
+version = "1.0.124"
+features = ["derive"]
+
+[dependencies.serde_json]
+version = "1.0.64"
+
+[dependencies.envy]
+version = "0.4.2"
+
+[dependencies.tide]
+version = "0.16.0"
+
+# TODO: Consider about async variants
+[dependencies.multipart]
+version = "0.17.1"
+default-features = false
+features = ["server"]
+
+[dependencies.yarte]
+version = "0.15"
+
+[dependencies.sqlx]
+version = "0.5.1"
+features = ["runtime-async-std-native-tls", "sqlite", "postgres", "chrono"]
