@@ -4,5 +4,12 @@
   "main": "index.js",
   "repository": "https://github.com/github:kb10uy/kebisafe",
   "author": "Yū Kobayashi <kb10uy@kb10uy.org>",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.18.0",
+    "@typescript-eslint/parser": "^4.18.0",
+    "eslint": "^7.22.0",
+    "parcel": "^2.0.0-beta.2",
+    "typescript": "^4.2.3"
+  }
 }

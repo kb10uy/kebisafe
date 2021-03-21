@@ -8,5 +8,9 @@
         "lib": [
             "DOM", "ES2020"
         ]
-    }
+    },
+    "exclude": [
+        "node_modules",
+        ".eslintrc.js",
+    ]
 }
