@@ -1,3 +1,5 @@
+mod auth;
+
 use crate::{application::State, template};
 
 use async_std::{
