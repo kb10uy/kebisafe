@@ -11,7 +11,8 @@ async fn main() -> Result<()> {
     pretty_env_logger::init();
     let envs: Environments = envy::from_env()?;
 
-    let mut app = tide::with_state(State::new()?);
+    let mut app = tide::with_state(State::new("./dist")?);
+    app.at("/public/*path").get(endpoint::public_static);
     app.at("/").get(endpoint::index);
 
     app.listen(envs.listen_at).await?;
