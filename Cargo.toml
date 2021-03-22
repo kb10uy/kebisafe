@@ -28,6 +28,9 @@ version = "0.1.4"
 [dependencies.password-hash]
 version = "0.1.2"
 
+[dependencies.data-encoding]
+version = "2.3.2"
+
 # Dependencies - CLI
 
 [dependencies.log]
@@ -89,9 +92,6 @@ version = "2.1.0"
 version = "0.17.1"
 default-features = false
 features = ["server"]
-
-[dependencies.async-session]
-version = "2.0.1"
 
 [dependencies.yarte]
 version = "0.15.3"

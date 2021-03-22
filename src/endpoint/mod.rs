@@ -14,23 +14,39 @@ use anyhow::{Context, Result};
 use percent_encoding::percent_decode;
 use tide::{
     http::{headers, mime, StatusCode},
-    Request, Response, Result as TideResult,
+    sessions::Session,
+    Redirect, Request, Response, Result as TideResult,
 };
 use yarte::Template;
 
 /// `GET /`
 /// Index
-pub async fn index(_request: Request<State>) -> TideResult {
+pub async fn index(mut request: Request<State>) -> TideResult {
+    let session = request.session_mut();
+
+    let flashes = swap_flashes(session, vec![])?;
     Ok(Response::builder(StatusCode::Ok)
         .content_type(mime::HTML)
         .body(
             template::Index {
-                common: Default::default(),
+                common: template::Common {
+                    account: None,
+                    flashes,
+                },
                 pictures: vec![],
             }
             .call()?,
         )
         .build())
+}
+
+pub async fn add_flash(mut request: Request<State>) -> TideResult {
+    let session = request.session_mut();
+
+    let new_flashes = vec![template::Flash::Info("Sample generated".to_string())];
+    swap_flashes(session, new_flashes)?;
+
+    Ok(Redirect::new("/").into())
 }
 
 /// `GET /public/*`
@@ -52,6 +68,14 @@ pub async fn public_static(request: Request<State>) -> TideResult {
         .content_type(mime_type.first_or_octet_stream().as_ref())
         .body(body)
         .build())
+}
+
+/// Pops existing flash messages and inserts new ones.
+pub fn swap_flashes(session: &mut Session, new_flashes: Vec<template::Flash>) -> Result<Vec<template::Flash>> {
+    let old_flashes = session.get("flash_messages").unwrap_or_default();
+    session.insert("flash_messages", new_flashes)?;
+
+    Ok(old_flashes)
 }
 
 /// Canonicalizes input relative path.

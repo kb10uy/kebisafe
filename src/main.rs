@@ -11,6 +11,8 @@ use argon2::{
 };
 use clap::Clap;
 use rand::prelude::*;
+use tide::sessions::{MemoryStore, SessionMiddleware};
+use data_encoding::HEXLOWER_PERMISSIVE;
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -29,9 +31,16 @@ async fn main() -> Result<()> {
 }
 
 async fn run_server(envs: Environments) -> Result<()> {
+    let key = HEXLOWER_PERMISSIVE.decode(envs.secret_key.as_bytes())?;
     let mut app = tide::with_state(State::new(&envs, "./dist")?);
+
+    // Middlewares
+    app.with(SessionMiddleware::new(MemoryStore::new(), &key));
+
+    // Routes
     app.at("/public/*path").get(endpoint::public_static);
     app.at("/").get(endpoint::index);
+    app.at("/add").get(endpoint::add_flash);
 
     app.listen(envs.listen_at).await?;
     Ok(())

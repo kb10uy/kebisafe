@@ -1,0 +1,14 @@
+<div class="row">
+    {{#each flashes }}
+        {{
+            let (class, message) = match this {
+                Flash::Info(s) => ("alert-primary", s),
+                Flash::Warning(s) => ("alert-warning", s),
+                Flash::Error(s) => ("alert-danger", s),
+            }
+        }}
+        <div class="alert {{ class }}" role="alert">
+            {{ message }}
+        </div>
+    {{/each}}
+</div>

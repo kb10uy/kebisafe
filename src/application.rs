@@ -3,7 +3,6 @@
 use async_std::{net::SocketAddr, path::Path};
 
 use anyhow::Result;
-use async_session::MemoryStore;
 use clap::Clap;
 use serde::Deserialize;
 
@@ -11,6 +10,7 @@ use serde::Deserialize;
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Environments {
     pub listen_at: SocketAddr,
+    pub secret_key: String,
     pub account_name: String,
     pub account_password: String,
 }
@@ -35,9 +35,6 @@ pub enum Subcommand {
 /// Shared application state for the server.
 #[derive(Debug, Clone)]
 pub struct State {
-    /// HTTP session store
-    pub session_store: MemoryStore,
-
     /// Root directory of static file serving
     pub public_root: Box<Path>,
 
@@ -48,11 +45,9 @@ pub struct State {
 impl State {
     /// Constructs new application state.
     pub fn new(envs: &Environments, public_path: impl AsRef<Path>) -> Result<State> {
-        let session_store = MemoryStore::new();
         let public_root = public_path.as_ref().into();
 
         Ok(State {
-            session_store,
             public_root,
             account: (envs.account_name.clone(), envs.account_password.clone()),
         })

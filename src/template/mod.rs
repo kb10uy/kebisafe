@@ -1,11 +1,12 @@
 use yarte::Template;
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, Default)]
 pub struct Account {
     name: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Flash {
     Info(String),
     Warning(String),
@@ -14,8 +15,8 @@ pub enum Flash {
 
 #[derive(Debug, Clone, Default)]
 pub struct Common {
-    account: Option<Account>,
-    flashes: Vec<Flash>,
+    pub account: Option<Account>,
+    pub flashes: Vec<Flash>,
 }
 
 #[derive(Debug, Template)]
