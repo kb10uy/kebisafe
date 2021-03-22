@@ -19,6 +19,9 @@ features = ["serde"]
 [dependencies.regex]
 version = "1.4.5"
 
+[dependencies.rand]
+version = "0.8.3"
+
 [dependencies.argon2]
 version = "0.1.4"
 

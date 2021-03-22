@@ -5,11 +5,29 @@ use async_std::{net::SocketAddr, path::Path};
 use anyhow::Result;
 use async_session::MemoryStore;
 use serde::Deserialize;
+use clap::Clap;
 
 /// Captured environment variables.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Environments {
     pub listen_at: SocketAddr,
+}
+
+/// Commandline arguments.
+#[derive(Debug, Clap)]
+pub struct Arguments {
+    /// Executing subcommand (default to `serve`)
+    #[clap(subcommand)]
+    pub subcommand: Option<Subcommand>,
+}
+
+#[derive(Debug, Clap)]
+pub enum Subcommand {
+    /// Starts Kebisafe server
+    Serve,
+
+    /// Generates password hash
+    GeneratePassword,
 }
 
 /// Shared application state for the server.
