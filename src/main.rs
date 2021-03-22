@@ -1,8 +1,14 @@
 mod application;
 mod endpoint;
+mod protection;
 mod template;
 
-use crate::application::{Arguments, Environments, State, Subcommand};
+use crate::{
+    application::{Arguments, Environments, State, Subcommand},
+    protection::CsrfProtectionMiddleware,
+};
+
+use std::time::Duration;
 
 use anyhow::{format_err, Result};
 use argon2::{
@@ -12,7 +18,6 @@ use argon2::{
 use clap::Clap;
 use rand::prelude::*;
 use tide::sessions::{MemoryStore, SessionMiddleware};
-use data_encoding::HEXLOWER_PERMISSIVE;
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -31,11 +36,12 @@ async fn main() -> Result<()> {
 }
 
 async fn run_server(envs: Environments) -> Result<()> {
-    let key = HEXLOWER_PERMISSIVE.decode(envs.secret_key.as_bytes())?;
-    let mut app = tide::with_state(State::new(&envs, "./dist")?);
+    let (state, secret_key) = State::new(&envs, "./dist")?;
+    let mut app = tide::with_state(state);
 
     // Middlewares
-    app.with(SessionMiddleware::new(MemoryStore::new(), &key));
+    app.with(SessionMiddleware::new(MemoryStore::new(), &secret_key));
+    app.with(CsrfProtectionMiddleware::new(&secret_key, Duration::from_secs(86400))?);
 
     // Routes
     app.at("/public/*path").get(endpoint::public_static);

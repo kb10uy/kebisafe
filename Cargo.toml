@@ -25,6 +25,9 @@ version = "0.8.3"
 [dependencies.argon2]
 version = "0.1.4"
 
+[dependencies.aes-gcm-siv]
+version = "0.9.0"
+
 [dependencies.password-hash]
 version = "0.1.2"
 
