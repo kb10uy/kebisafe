@@ -1,0 +1,7 @@
+/.cache
+/.parcel-cache
+/dist
+/node_modules
+/src
+/target
+/package.json
