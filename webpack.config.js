@@ -7,7 +7,7 @@ const sourceMapEnabled = process.env['NODE_ENV'] !== 'production';
 
 module.exports = {
     entry: {
-        app: ['./assets/scripts/index.ts', './resources/styles/index.scss'],
+        app: ['./assets/scripts/index.ts', './assets/styles/index.scss'],
     },
 
     output: {
@@ -43,7 +43,9 @@ module.exports = {
                         loader: 'postcss-loader',
                         options: {
                             sourceMap: sourceMapEnabled,
-                            plugins: [AutoPrefixer()],
+                            postcssOptions: {
+                                plugins: [AutoPrefixer()],
+                            },
                         },
                     },
                     {
@@ -80,4 +82,6 @@ module.exports = {
             filename: '[name].css',
         }),
     ],
+
+    devtool: 'source-map',
 };
