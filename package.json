@@ -8,7 +8,7 @@
   "scripts": {
     "lint:script": "eslint ./assets/scripts/**/*.ts",
     "lint:style": "stylelint ./assets/styles/**/*.scss",
-    "prettier": "prettier",
+    "prettier": "prettier ./**/*",
     "build": "webpack --mode development"
   },
   "devDependencies": {
