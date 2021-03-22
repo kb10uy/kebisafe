@@ -14,6 +14,7 @@ use rand::prelude::*;
 
 #[async_std::main]
 async fn main() -> Result<()> {
+    dotenv::dotenv().ok();
     pretty_env_logger::init();
     let envs: Environments = envy::from_env()?;
     let args = Arguments::parse();
