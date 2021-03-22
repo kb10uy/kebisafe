@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
 }
 
 async fn run_server(envs: Environments) -> Result<()> {
-    let mut app = tide::with_state(State::new("./dist")?);
+    let mut app = tide::with_state(State::new(&envs, "./dist")?);
     app.at("/public/*path").get(endpoint::public_static);
     app.at("/").get(endpoint::index);
 

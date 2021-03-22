@@ -6,11 +6,11 @@ use async_std::{
     fs,
     path::{Component as PathComponent, Path, PathBuf},
 };
-use std::io::{prelude::*, Cursor};
+// use std::io::{prelude::*, Cursor};
 
 use anyhow::{Context, Result};
-use log::info;
-use multipart::server::{Multipart, MultipartField};
+// use log::info;
+// use multipart::server::{Multipart, MultipartField};
 use percent_encoding::percent_decode;
 use tide::{
     http::{headers, mime, StatusCode},
@@ -23,7 +23,13 @@ use yarte::Template;
 pub async fn index(_request: Request<State>) -> TideResult {
     Ok(Response::builder(StatusCode::Ok)
         .content_type(mime::HTML)
-        .body(template::Index { pictures: vec![] }.call()?)
+        .body(
+            template::Index {
+                common: Default::default(),
+                pictures: vec![],
+            }
+            .call()?,
+        )
         .build())
 }
 
@@ -71,6 +77,7 @@ fn canonicalize_path(root: impl AsRef<Path>, path: impl AsRef<Path>) -> Result<P
     Ok(root.as_ref().join(relative))
 }
 
+/*
 async fn index_test(mut request: Request<()>) -> TideResult {
     let content_type = request.content_type().unwrap();
     if content_type.essence() != mime::MULTIPART_FORM.essence() {
@@ -106,3 +113,4 @@ async fn index_test(mut request: Request<()>) -> TideResult {
 
     todo!();
 }
+*/
