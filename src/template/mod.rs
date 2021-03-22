@@ -1,17 +1,6 @@
+use crate::session::{Account, Flash};
+
 use yarte::Template;
-use serde::{Serialize, Deserialize};
-
-#[derive(Debug, Clone, Default)]
-pub struct Account {
-    name: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum Flash {
-    Info(String),
-    Warning(String),
-    Error(String),
-}
 
 #[derive(Debug, Clone, Default)]
 pub struct Common {

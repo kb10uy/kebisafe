@@ -3,6 +3,7 @@
 use async_std::{
     net::SocketAddr,
     path::{Path, PathBuf},
+    sync::Arc,
 };
 
 use aes_gcm_siv::{
@@ -55,7 +56,7 @@ pub struct State {
 
 impl State {
     /// Constructs new application state.
-    pub fn new(envs: &Environments, public_path: impl AsRef<Path>) -> Result<(State, Box<[u8]>)> {
+    pub fn new(envs: &Environments, public_path: impl AsRef<Path>) -> Result<(Arc<State>, Box<[u8]>)> {
         let secret_key = HEXLOWER_PERMISSIVE.decode(envs.secret_key.as_bytes())?.into_boxed_slice();
         let public_root = public_path.as_ref().into();
 
@@ -63,11 +64,11 @@ impl State {
         let cipher = Aes256GcmSiv::new(key_array);
 
         Ok((
-            State {
+            Arc::new(State {
                 public_root,
                 cipher,
                 account: (envs.account_name.clone(), envs.account_password.clone()),
-            },
+            }),
             secret_key,
         ))
     }

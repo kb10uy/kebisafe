@@ -1,27 +1,28 @@
-mod auth;
+pub(crate) mod auth;
 
-use crate::{application::State, template};
+use crate::{
+    application::State,
+    session::{swap_flashes, Flash},
+    template,
+};
 
 use async_std::{
     fs,
     path::{Component as PathComponent, Path, PathBuf},
+    sync::Arc,
 };
-// use std::io::{prelude::*, Cursor};
 
 use anyhow::{Context, Result};
-// use log::info;
-// use multipart::server::{Multipart, MultipartField};
 use percent_encoding::percent_decode;
 use tide::{
     http::{headers, mime, StatusCode},
-    sessions::Session,
     Redirect, Request, Response, Result as TideResult,
 };
 use yarte::Template;
 
 /// `GET /`
 /// Index
-pub async fn index(mut request: Request<State>) -> TideResult {
+pub async fn index(mut request: Request<Arc<State>>) -> TideResult {
     let session = request.session_mut();
 
     let flashes = swap_flashes(session, vec![])?;
@@ -29,10 +30,7 @@ pub async fn index(mut request: Request<State>) -> TideResult {
         .content_type(mime::HTML)
         .body(
             template::Index {
-                common: template::Common {
-                    account: None,
-                    flashes,
-                },
+                common: template::Common { account: None, flashes },
                 pictures: vec![],
             }
             .call()?,
@@ -40,10 +38,10 @@ pub async fn index(mut request: Request<State>) -> TideResult {
         .build())
 }
 
-pub async fn add_flash(mut request: Request<State>) -> TideResult {
+pub async fn add_flash(mut request: Request<Arc<State>>) -> TideResult {
     let session = request.session_mut();
 
-    let new_flashes = vec![template::Flash::Info("Sample generated".to_string())];
+    let new_flashes = vec![Flash::Info("Sample generated".to_string())];
     swap_flashes(session, new_flashes)?;
 
     Ok(Redirect::new("/").into())
@@ -51,7 +49,7 @@ pub async fn add_flash(mut request: Request<State>) -> TideResult {
 
 /// `GET /public/*`
 /// Serves all public static files.
-pub async fn public_static(request: Request<State>) -> TideResult {
+pub async fn public_static(request: Request<Arc<State>>) -> TideResult {
     let state = request.state();
     let path = request.param("path").expect("Remaining path must be given");
 
@@ -68,14 +66,6 @@ pub async fn public_static(request: Request<State>) -> TideResult {
         .content_type(mime_type.first_or_octet_stream().as_ref())
         .body(body)
         .build())
-}
-
-/// Pops existing flash messages and inserts new ones.
-pub fn swap_flashes(session: &mut Session, new_flashes: Vec<template::Flash>) -> Result<Vec<template::Flash>> {
-    let old_flashes = session.get("flash_messages").unwrap_or_default();
-    session.insert("flash_messages", new_flashes)?;
-
-    Ok(old_flashes)
 }
 
 /// Canonicalizes input relative path.

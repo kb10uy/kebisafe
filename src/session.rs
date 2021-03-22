@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use chrono::prelude::*;
 use data_encoding::BASE64;
 use rand::prelude::*;
+use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use tide::{
     http::{mime, Method, StatusCode},
@@ -18,6 +19,7 @@ use tide::{
 
 const ALLOWED_METHODS: &'static [Method] = &[Method::Get, Method::Head, Method::Options];
 
+/// The middleware which enables CSRF protection.
 pub struct CsrfProtectionMiddleware {
     cipher: Aes256GcmSiv,
     token_expiary: u64,
@@ -44,6 +46,7 @@ impl<State: Clone + Send + Sync + 'static> Middleware<State> for CsrfProtectionM
             return Ok(next.run(request).await);
         }
 
+        // Retrieve token
         let token = if let Some(header_token) = request.header("X-CSRF-Token") {
             // Retrieve from headers
             header_token.as_str().to_string()
@@ -58,6 +61,7 @@ impl<State: Clone + Send + Sync + 'static> Middleware<State> for CsrfProtectionM
             return Ok(Response::builder(StatusCode::BadRequest).body("CSRF token not found").build());
         };
 
+        // Decode and decrypt token
         let decoded_buffer;
         let (nonce, cipher_text) = match BASE64.decode(token.as_bytes()) {
             Ok(v) if v.len() >= 12 => {
@@ -70,7 +74,6 @@ impl<State: Clone + Send + Sync + 'static> Middleware<State> for CsrfProtectionM
                     .build())
             }
         };
-
         let nonce_array = GenericArray::from_slice(nonce);
         let decrypted = match self.cipher.decrypt(nonce_array, cipher_text) {
             Ok(plain) => plain,
@@ -100,6 +103,20 @@ impl<State: Clone + Send + Sync + 'static> Middleware<State> for CsrfProtectionM
     }
 }
 
+/// Represents an account information.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct Account {
+    pub name: String,
+}
+
+/// Represents a flash message.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Flash {
+    Info(String),
+    Warning(String),
+    Error(String),
+}
+
 /// Generates a CSRF token.
 pub fn generate_csrf_token(cipher: &Aes256GcmSiv, session: &Session) -> Result<String> {
     let nonce = random::<[u8; 12]>();
@@ -110,4 +127,12 @@ pub fn generate_csrf_token(cipher: &Aes256GcmSiv, session: &Session) -> Result<S
         .encrypt(&nonce, plain_text.as_bytes())
         .map_err(|_| format_err!("Failed to encrypt token"))?;
     Ok(BASE64.encode(&cipher_bytes))
+}
+
+/// Pops existing flash messages and inserts new ones.
+pub fn swap_flashes(session: &mut Session, new_flashes: Vec<Flash>) -> Result<Vec<Flash>> {
+    let old_flashes = session.get("flash_messages").unwrap_or_default();
+    session.insert("flash_messages", new_flashes)?;
+
+    Ok(old_flashes)
 }

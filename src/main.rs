@@ -1,11 +1,11 @@
 mod application;
 mod endpoint;
-mod protection;
+mod session;
 mod template;
 
 use crate::{
     application::{Arguments, Environments, State, Subcommand},
-    protection::CsrfProtectionMiddleware,
+    session::CsrfProtectionMiddleware,
 };
 
 use std::time::Duration;
@@ -46,6 +46,7 @@ async fn run_server(envs: Environments) -> Result<()> {
     // Routes
     app.at("/public/*path").get(endpoint::public_static);
     app.at("/").get(endpoint::index);
+    app.at("/signin").post(endpoint::auth::signin);
     app.at("/add").get(endpoint::add_flash);
 
     app.listen(envs.listen_at).await?;
