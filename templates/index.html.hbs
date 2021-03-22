@@ -11,13 +11,10 @@
 </head>
 
 <body>
+    {{> ./components/navbar.html.hbs common }}
+
     <div class="container">
         {{> ./components/flashes.html.hbs common }}
-        {{#if let Some(account) = &common.account }}
-            Hello, {{ account.name }}
-        {{else}}
-            Please login
-        {{/if}}
 
         <h1>Kebisafe 2</h1>
         <p>

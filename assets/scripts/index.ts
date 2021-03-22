@@ -1,1 +1,1 @@
-import { Tooltip } from 'bootstrap';
+import { Tooltip, Toast, Popover } from 'bootstrap';

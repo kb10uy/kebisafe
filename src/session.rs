@@ -20,7 +20,7 @@ pub struct Account {
 }
 
 /// Represents a flash message.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Flash {
     Info(String),
     Warning(String),
@@ -62,14 +62,17 @@ pub fn verify_csrf_token(cipher: &Aes256GcmSiv, session: &Session, token: &str) 
 
     let now = Local::now().timestamp();
     let token_time = params[1].parse().ok().unwrap_or(0);
-    ensure!(now - token_time > TOKEN_EXPIARY, "Expired token");
+    ensure!(now - token_time <= TOKEN_EXPIARY, "Expired token");
 
     Ok(())
 }
 
 /// Pops existing flash messages and inserts new ones.
-pub fn swap_flashes(session: &mut Session, new_flashes: Vec<Flash>) -> Result<Vec<Flash>> {
+pub fn swap_flashes(session: &mut Session, mut new_flashes: Vec<Flash>) -> Result<Vec<Flash>> {
     let old_flashes = session.get("flash_messages").unwrap_or_default();
+
+    new_flashes.sort();
+    new_flashes.dedup();
     session.insert("flash_messages", new_flashes)?;
 
     Ok(old_flashes)
