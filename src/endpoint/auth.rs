@@ -1,5 +1,6 @@
 use crate::{
     application::State,
+    csrf_protect,
     session::{swap_flashes, Flash},
 };
 
@@ -10,18 +11,22 @@ use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
 use serde::Deserialize;
 use tide::{Redirect, Request, Result as TideResult};
 
+/// `POST /signin`
+/// Performs sign in.
 pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
     #[derive(Debug, Deserialize)]
     struct Parameters {
+        _token: String,
         username: String,
         password: String,
     }
 
-    let mut flashes = vec![];
     let state = request.state().clone();
     let params: Parameters = request.body_form().await?;
-    let session = request.session_mut();
+    csrf_protect!(request, &params._token);
 
+    let mut flashes = vec![];
+    let session = request.session_mut();
     let argon2 = Argon2::default();
     let password_hash = PasswordHash::new(&state.account.1).map_err(|_| format_err!("Invalid password hash"))?;
     if &params.username != &state.account.0 {

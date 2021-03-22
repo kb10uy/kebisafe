@@ -1,14 +1,13 @@
 mod application;
 mod endpoint;
+mod log;
 mod session;
 mod template;
 
 use crate::{
     application::{Arguments, Environments, State, Subcommand},
-    session::CsrfProtectionMiddleware,
+    log::ClientErrorLogMiddleware,
 };
-
-use std::time::Duration;
 
 use anyhow::{format_err, Result};
 use argon2::{
@@ -40,8 +39,8 @@ async fn run_server(envs: Environments) -> Result<()> {
     let mut app = tide::with_state(state);
 
     // Middlewares
+    app.with(ClientErrorLogMiddleware);
     app.with(SessionMiddleware::new(MemoryStore::new(), &secret_key));
-    app.with(CsrfProtectionMiddleware::new(&secret_key, Duration::from_secs(86400))?);
 
     // Routes
     app.at("/public/*path").get(endpoint::public_static);

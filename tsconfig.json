@@ -5,12 +5,7 @@
         "moduleResolution": "Node",
         "esModuleInterop": true,
         "module": "CommonJS",
-        "lib": [
-            "DOM", "ES2020"
-        ]
+        "lib": ["DOM", "ES2020", "DOM.Iterable"]
     },
-    "exclude": [
-        "node_modules",
-        ".eslintrc.js",
-    ]
+    "exclude": ["node_modules", ".eslintrc.js"]
 }

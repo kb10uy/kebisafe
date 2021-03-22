@@ -2,7 +2,7 @@ pub(crate) mod auth;
 
 use crate::{
     application::State,
-    session::{swap_flashes, Flash},
+    session::{generate_csrf_token, swap_flashes, Flash},
     template,
 };
 
@@ -23,18 +23,13 @@ use yarte::Template;
 /// `GET /`
 /// Index
 pub async fn index(mut request: Request<Arc<State>>) -> TideResult {
+    let state = request.state().clone();
     let session = request.session_mut();
 
-    let flashes = swap_flashes(session, vec![])?;
+    let common = template::Common::from_session(session, vec![], Some(generate_csrf_token(&state.cipher, session)?))?;
     Ok(Response::builder(StatusCode::Ok)
         .content_type(mime::HTML)
-        .body(
-            template::Index {
-                common: template::Common { account: None, flashes },
-                pictures: vec![],
-            }
-            .call()?,
-        )
+        .body(template::Index { common, pictures: vec![] }.call()?)
         .build())
 }
 
