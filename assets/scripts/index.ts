@@ -1,1 +1,3 @@
-console.log("Hello");
+import { Tooltip } from 'bootstrap';
+
+console.log('Hello');
