@@ -1,12 +1,12 @@
 mod application;
 mod endpoint;
-mod log;
+mod middleware;
 mod session;
 mod template;
 
 use crate::{
     application::{Arguments, Environments, State, Subcommand},
-    log::ClientErrorLogMiddleware,
+    middleware::ClientErrorLogMiddleware,
 };
 
 use anyhow::{format_err, Result};
