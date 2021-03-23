@@ -2,7 +2,7 @@ pub(crate) mod auth;
 
 use crate::{
     application::State,
-    session::{generate_csrf_token, swap_flashes, Flash},
+    session::{swap_flashes, Common, Flash},
     template,
 };
 
@@ -26,7 +26,7 @@ pub async fn index(mut request: Request<Arc<State>>) -> TideResult {
     let state = request.state().clone();
     let session = request.session_mut();
 
-    let common = template::Common::from_session(session, vec![], Some(generate_csrf_token(&state.cipher, session)?))?;
+    let common = Common::with_csrf_token(session, vec![], &state.cipher)?;
     Ok(Response::builder(StatusCode::Ok)
         .content_type(mime::HTML)
         .body(template::Index { common, pictures: vec![] }.call()?)

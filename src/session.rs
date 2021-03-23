@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 use tide::sessions::Session;
 
 const TOKEN_EXPIARY: i64 = 86400;
+const SESSION_ACCOUNT: &'static str = "kebisafe.account";
+const SESSION_FLASHES: &'static str = "kebisafe.flashes";
 
 /// Represents an account information.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -25,6 +27,34 @@ pub enum Flash {
     Info(String),
     Warning(String),
     Error(String),
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Common {
+    pub account: Option<Account>,
+    pub flashes: Vec<Flash>,
+    pub csrf: String,
+}
+
+impl Common {
+    /// Constructs without CSRF token.
+    pub fn new(session: &mut Session, new_flashes: Vec<Flash>) -> Result<Common> {
+        Ok(Common {
+            account: session.get(SESSION_ACCOUNT),
+            flashes: swap_flashes(session, new_flashes)?,
+            csrf: "".to_string(),
+        })
+    }
+
+    /// Constructs with CSRF token.
+    pub fn with_csrf_token(session: &mut Session, new_flashes: Vec<Flash>, cipher: &Aes256GcmSiv) -> Result<Common> {
+        let csrf = generate_csrf_token(cipher, session)?;
+        Ok(Common {
+            account: session.get(SESSION_ACCOUNT),
+            flashes: swap_flashes(session, new_flashes)?,
+            csrf,
+        })
+    }
 }
 
 /// Generates a CSRF token.
@@ -69,13 +99,25 @@ pub fn verify_csrf_token(cipher: &Aes256GcmSiv, session: &Session, token: &str) 
 
 /// Pops existing flash messages and inserts new ones.
 pub fn swap_flashes(session: &mut Session, mut new_flashes: Vec<Flash>) -> Result<Vec<Flash>> {
-    let old_flashes = session.get("flash_messages").unwrap_or_default();
+    let old_flashes = session.get(SESSION_FLASHES).unwrap_or_default();
 
     new_flashes.sort();
     new_flashes.dedup();
-    session.insert("flash_messages", new_flashes)?;
+    session.insert(SESSION_FLASHES, new_flashes)?;
 
     Ok(old_flashes)
+}
+
+/// Sets account information into the session.
+pub fn set_account(session: &mut Session, account: Account) -> Result<()> {
+    session.insert(SESSION_ACCOUNT, account)?;
+    Ok(())
+}
+
+/// Deletes account information from the session.
+pub fn delete_account(session: &mut Session) -> Result<()> {
+    session.remove(SESSION_ACCOUNT);
+    Ok(())
 }
 
 #[macro_export]

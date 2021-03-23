@@ -1,7 +1,7 @@
 use crate::{
     application::State,
     csrf_protect,
-    session::{swap_flashes, Flash},
+    session::{set_account, swap_flashes, Account, Flash},
 };
 
 use async_std::sync::Arc;
@@ -27,20 +27,32 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
 
     let mut flashes = vec![];
     let session = request.session_mut();
-    let argon2 = Argon2::default();
-    let password_hash = PasswordHash::new(&state.account.1).map_err(|_| format_err!("Invalid password hash"))?;
+
+    // Verify username
     if &params.username != &state.account.0 {
         flashes.push(Flash::Error("User not found".into()));
+        return Ok(Redirect::new("/").into());
     }
+
+    // Verify password
+    let argon2 = Argon2::default();
+    let password_hash = PasswordHash::new(&state.account.1).map_err(|_| format_err!("Invalid password hash"))?;
     match argon2.verify_password(params.password.as_bytes(), &password_hash) {
-        Ok(()) => {
-            flashes.push(Flash::Info(format!("Welcome back, {}", params.username)));
-        }
+        Ok(()) => {}
         Err(_) => {
             flashes.push(Flash::Error("User not found".into()));
+            return Ok(Redirect::new("/").into());
         }
     }
 
+    set_account(
+        session,
+        Account {
+            name: state.account.0.clone(),
+        },
+    )?;
+    flashes.push(Flash::Info(format!("Welcome back, {}", params.username)));
     swap_flashes(session, flashes)?;
-    return Ok(Redirect::new("/").into());
+
+    Ok(Redirect::new("/").into())
 }
