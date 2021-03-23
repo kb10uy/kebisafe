@@ -42,11 +42,18 @@ async fn run_server(envs: Environments) -> Result<()> {
     app.with(ClientErrorLogMiddleware);
     app.with(SessionMiddleware::new(MemoryStore::new(), &secret_key));
 
-    // Routes
-    app.at("/public/*path").get(endpoint::public_static);
+    // Routes -----------------------------------------------------------------
+    // Root
     app.at("/").get(endpoint::index);
+    app.at("/public/*path").get(endpoint::public_static);
+
+    // Authentication
     app.at("/signin").post(endpoint::auth::signin);
+    app.at("/signout").delete(endpoint::auth::signout);
+
+    // Media
     app.at("/add").get(endpoint::add_flash);
+    // Routes -----------------------------------------------------------------
 
     app.listen(envs.listen_at).await?;
     Ok(())

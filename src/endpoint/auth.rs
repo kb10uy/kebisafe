@@ -3,7 +3,7 @@
 use crate::{
     application::State,
     csrf_protect,
-    session::{set_account, swap_flashes, Account, Flash},
+    session::{delete_account, set_account, swap_flashes, Account, Flash},
 };
 
 use async_std::sync::Arc;
@@ -56,6 +56,27 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
         },
     )?;
     flashes.push(Flash::Info(format!("Welcome back, {}", params.username)));
+    swap_flashes(session, flashes)?;
+
+    Ok(Redirect::new("/").into())
+}
+
+/// `DELETE /signout`
+/// Performs sign out.
+pub async fn signout(mut request: Request<Arc<State>>) -> TideResult {
+    #[derive(Debug, Deserialize)]
+    struct Parameters {
+        _token: String,
+    }
+
+    let params: Parameters = request.body_form().await?;
+    csrf_protect!(request, &params._token);
+
+    let mut flashes = vec![];
+    let session = request.session_mut();
+
+    delete_account(session)?;
+    flashes.push(Flash::Info(format!("Signed out successfully.")));
     swap_flashes(session, flashes)?;
 
     Ok(Redirect::new("/").into())
