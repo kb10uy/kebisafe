@@ -2,9 +2,8 @@
 
 use crate::{
     application::State,
-    csrf_protect,
-    validate_form,
     session::{delete_account, set_account, swap_flashes, Account, Flash},
+    validate_form,
 };
 
 use async_std::sync::Arc;
@@ -24,11 +23,9 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
         password: String,
     }
 
-    let params = validate_form!(Parameters, request, "/");
-    csrf_protect!(request, &params._token);
-
     let mut flashes = vec![];
     let state = request.state().clone();
+    let params = validate_form!(Parameters, request, "/");
     let session = request.session_mut();
 
     // Verify username
@@ -65,14 +62,6 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
 /// `DELETE /signout`
 /// Performs sign out.
 pub async fn signout(mut request: Request<Arc<State>>) -> TideResult {
-    #[derive(Debug, Deserialize)]
-    struct Parameters {
-        _token: String,
-    }
-
-    let params = validate_form!(Parameters, request, "/");
-    csrf_protect!(request, &params._token);
-
     let mut flashes = vec![];
     let session = request.session_mut();
 

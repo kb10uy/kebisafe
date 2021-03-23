@@ -60,6 +60,9 @@ features = ["derive"]
 [dependencies.serde_json]
 version = "1.0.64"
 
+[dependencies.serde_urlencoded]
+version = "0.7.0"
+
 [dependencies.envy]
 version = "0.4.2"
 

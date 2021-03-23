@@ -123,22 +123,6 @@ pub fn delete_account(session: &mut Session) -> Result<()> {
     Ok(())
 }
 
-/// Performs CSRF protection.
-#[macro_export]
-macro_rules! csrf_protect {
-    ($req:expr, $t:expr) => {
-        use tide::{http::StatusCode, Response};
-        use $crate::session::verify_csrf_token;
-
-        let cipher = &$req.state().cipher;
-        let session = $req.session();
-        match verify_csrf_token(cipher, session, $t) {
-            Ok(()) => (),
-            Err(e) => return Ok(Response::builder(StatusCode::BadRequest).body(e.to_string()).build()),
-        }
-    };
-}
-
 /// Validates form data.
 /// If failed, add a flash message and redirect.
 #[macro_export]

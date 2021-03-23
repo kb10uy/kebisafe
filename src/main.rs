@@ -6,7 +6,7 @@ mod template;
 
 use crate::{
     application::{Arguments, Environments, State, Subcommand},
-    middleware::ClientErrorLogMiddleware,
+    middleware::{ClientErrorLogMiddleware, FormValidationMiddleware},
 };
 
 use anyhow::{format_err, Result};
@@ -16,7 +16,10 @@ use argon2::{
 };
 use clap::Clap;
 use rand::prelude::*;
-use tide::{sessions::{MemoryStore, SessionMiddleware}, security::CorsMiddleware};
+use tide::{
+    security::CorsMiddleware,
+    sessions::{MemoryStore, SessionMiddleware},
+};
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -36,12 +39,13 @@ async fn main() -> Result<()> {
 
 async fn run_server(envs: Environments) -> Result<()> {
     let (state, secret_key) = State::new(&envs, "./dist")?;
-    let mut app = tide::with_state(state);
+    let mut app = tide::with_state(state.clone());
 
     // Middlewares
     app.with(ClientErrorLogMiddleware);
-    app.with(CorsMiddleware::new());
     app.with(SessionMiddleware::new(MemoryStore::new(), &secret_key));
+    app.with(CorsMiddleware::new());
+    app.with(FormValidationMiddleware::new(state.cipher.clone()));
 
     // Routes -----------------------------------------------------------------
     // Root

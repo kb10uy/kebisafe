@@ -1536,6 +1536,7 @@ dependencies = [
  "rpassword",
  "serde",
  "serde_json",
+ "serde_urlencoded",
  "sqlx",
  "tide",
  "yarte",

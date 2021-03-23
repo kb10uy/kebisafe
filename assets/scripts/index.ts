@@ -8,6 +8,7 @@ function initializePage(e: Event): void {
     const forms = document.querySelectorAll('form[data-manual]') as NodeListOf<HTMLFormElement>;
 
     for (const form of forms) {
+        /*
         form.addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -16,6 +17,7 @@ function initializePage(e: Event): void {
         });
 
         console.log(`Form #${form.id} has been set to manual redirection.`);
+        */
     }
 }
 
@@ -55,7 +57,6 @@ async function processFormRedirect(form: HTMLFormElement): Promise<void> {
             responseType: 'text',
         });
         if (response.status >= 300) {
-            location.href = response.headers['location'];
         }
     } catch (e) {
         console.error(`Request error: ${e}`);
