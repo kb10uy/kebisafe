@@ -90,9 +90,6 @@ version = "0.16.0"
 [dependencies.mime_guess]
 version = "2.0.3"
 
-[dependencies.percent-encoding]
-version = "2.1.0"
-
 # TODO: Consider about async variants
 [dependencies.multipart]
 version = "0.17.1"

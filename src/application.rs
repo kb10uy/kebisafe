@@ -44,9 +44,6 @@ pub enum Subcommand {
 /// Shared application state for the server.
 #[derive(Clone)]
 pub struct State {
-    /// Root directory of static file serving
-    pub public_root: PathBuf,
-
     /// Cipher
     pub cipher: Aes256GcmSiv,
 
@@ -56,16 +53,13 @@ pub struct State {
 
 impl State {
     /// Constructs new application state.
-    pub fn new(envs: &Environments, public_path: impl AsRef<Path>) -> Result<(Arc<State>, Box<[u8]>)> {
+    pub fn new(envs: &Environments) -> Result<(Arc<State>, Box<[u8]>)> {
         let secret_key = HEXLOWER_PERMISSIVE.decode(envs.secret_key.as_bytes())?.into_boxed_slice();
-        let public_root = public_path.as_ref().into();
-
         let key_array = GenericArray::from_slice(&secret_key);
         let cipher = Aes256GcmSiv::new(key_array);
 
         Ok((
             Arc::new(State {
-                public_root,
                 cipher,
                 account: (envs.account_name.clone(), envs.account_password.clone()),
             }),

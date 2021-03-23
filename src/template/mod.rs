@@ -10,3 +10,9 @@ pub struct Index {
     pub common: Common,
     pub pictures: Vec<String>,
 }
+
+#[derive(Debug, Template)]
+#[template(path = "signin.html.hbs")]
+pub struct Signin {
+    pub common: Common,
+}

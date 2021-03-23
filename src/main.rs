@@ -9,8 +9,6 @@ use crate::{
     middleware::{ClientErrorLogMiddleware, FormValidationMiddleware, GracefulShutdownMiddleware},
 };
 
-use async_std::task::spawn;
-
 use anyhow::{format_err, Result};
 use argon2::{
     password_hash::{PasswordHasher, SaltString},
@@ -40,7 +38,7 @@ async fn main() -> Result<()> {
 }
 
 async fn run_server(envs: Environments) -> Result<()> {
-    let (state, secret_key) = State::new(&envs, "./dist")?;
+    let (state, secret_key) = State::new(&envs)?;
     let mut app = tide::with_state(state.clone());
 
     // Middlewares
@@ -54,9 +52,10 @@ async fn run_server(envs: Environments) -> Result<()> {
     // Routes -----------------------------------------------------------------
     // Root
     app.at("/").get(endpoint::index);
-    app.at("/public/*path").get(endpoint::public_static);
+    app.at("/public").serve_dir("./dist");
 
     // Authentication
+    app.at("/signin").get(endpoint::auth::render_signin);
     app.at("/signin").post(endpoint::auth::signin);
     app.at("/signout").delete(endpoint::auth::signout);
 

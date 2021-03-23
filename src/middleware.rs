@@ -12,7 +12,7 @@ use std::{
 use aes_gcm_siv::Aes256GcmSiv;
 use anyhow::{bail, format_err, Result};
 use async_trait::async_trait;
-use log::error;
+use log::{error, info};
 use multipart::server::Multipart;
 use serde::Deserialize;
 use tide::{
@@ -173,6 +173,7 @@ impl<State: 'static + Send + Sync + Clone> Middleware<State> for FormValidationM
             let method = method_str.parse()?;
             let inner_request: &mut HttpRequest = request.as_mut();
             inner_request.set_method(method);
+            info!("Request method set to {}", method);
         }
 
         // CSRF token validation
@@ -182,6 +183,7 @@ impl<State: 'static + Send + Sync + Clone> Middleware<State> for FormValidationM
                 _ => return Ok(Response::builder(StatusCode::BadRequest).build()),
             }
         }
+        info!("CSRF protection succeeded");
 
         request.set_body(body_bytes);
         let response = next.run(request).await;

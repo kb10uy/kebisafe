@@ -40,15 +40,6 @@ pub struct Common {
 }
 
 impl Common {
-    /// Constructs without CSRF token.
-    pub fn new(session: &mut Session, new_flashes: Vec<Flash>) -> Result<Common> {
-        Ok(Common {
-            account: session.get(SESSION_ACCOUNT),
-            flashes: swap_flashes(session, new_flashes)?,
-            csrf: "".to_string(),
-        })
-    }
-
     /// Constructs with CSRF token.
     pub fn with_csrf_token(session: &mut Session, new_flashes: Vec<Flash>, cipher: &Aes256GcmSiv) -> Result<Common> {
         let csrf = generate_csrf_token(cipher, session)?;

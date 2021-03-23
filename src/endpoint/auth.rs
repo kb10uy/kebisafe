@@ -2,8 +2,8 @@
 
 use crate::{
     application::State,
-    session::{delete_account, set_account, swap_flashes, Account, Flash},
-    validate_form,
+    session::{delete_account, set_account, swap_flashes, Account, Common, Flash},
+    template, validate_form,
 };
 
 use async_std::sync::Arc;
@@ -11,7 +11,24 @@ use async_std::sync::Arc;
 use anyhow::format_err;
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
 use serde::Deserialize;
-use tide::{Redirect, Request, Result as TideResult};
+use tide::{
+    http::{mime, StatusCode},
+    Redirect, Request, Response, Result as TideResult,
+};
+use yarte::Template;
+
+/// `GET /signin`
+/// Renders sign in page.
+pub async fn render_signin(mut request: Request<Arc<State>>) -> TideResult {
+    let state = request.state().clone();
+    let session = request.session_mut();
+
+    let common = Common::with_csrf_token(session, vec![], &state.cipher)?;
+    Ok(Response::builder(StatusCode::Ok)
+        .content_type(mime::HTML)
+        .body(template::Signin { common }.call()?)
+        .build())
+}
 
 /// `POST /signin`
 /// Performs sign in.
@@ -25,14 +42,14 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
 
     let mut flashes = vec![];
     let state = request.state().clone();
-    let params = validate_form!(Parameters, request, "/");
+    let params = validate_form!(Parameters, request, "/signin");
     let session = request.session_mut();
 
     // Verify username
     if &params.username != &state.account.0 {
         flashes.push(Flash::Error("User not found".into()));
         swap_flashes(session, flashes)?;
-        return Ok(Redirect::new("/").into());
+        return Ok(Redirect::new("/signin").into());
     }
 
     // Verify password
@@ -43,7 +60,7 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
         Err(_) => {
             flashes.push(Flash::Error("User not found".into()));
             swap_flashes(session, flashes)?;
-            return Ok(Redirect::new("/").into());
+            return Ok(Redirect::new("/signin").into());
         }
     }
 
@@ -55,6 +72,7 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
     )?;
     flashes.push(Flash::Info(format!("Welcome back, {}", params.username)));
     swap_flashes(session, flashes)?;
+    session.regenerate();
 
     Ok(Redirect::new("/").into())
 }
