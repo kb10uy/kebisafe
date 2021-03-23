@@ -1,41 +1,29 @@
-<!DOCTYPE html>
-<html lang="en">
+{{> ./components/__header.html.hbs }}
+{{! ======================================================================= !}}
 
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/public/app.css">
-    <script defer src="/public/app.js"></script>
-    <title>Kebisafe</title>
-</head>
+{{#if let Some(account) = &common.account }}
+<h1>Welcome back, {{ account.name }}</h1>
+{{/if}}
 
-<body>
-    {{> ./components/navbar.html.hbs common }}
+<h1>Kebisafe 2</h1>
+<p>
+    Currently there are {{ pictures.len() }} picture(s).
+</p>
 
-    <div class="container">
-        {{> ./components/flashes.html.hbs common }}
-
-        <h1>Kebisafe 2</h1>
-        <p>
-            Currently there are {{ pictures.len() }} picture(s).
-        </p>
-
-        <div class="row">
-            <form action="/signin" method="POST">
-                <input type="hidden" name="_token" value="{{ common.csrf }}">
-                <div class="mb-3">
-                    <label for="username" class="form-label">Username</label>
-                    <input type="text" class="form-control" id="username" name="username">
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" name="password">
-                </div>
-                <button type="submit" class="btn btn-primary">Sign in</button>
-            </form>
+<div class="row">
+    <form action="/signin" method="POST">
+        <input type="hidden" name="_token" value="{{ common.csrf }}">
+        <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" name="username">
         </div>
-    </div>
-</body>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password">
+        </div>
+        <button type="submit" class="btn btn-primary">Sign in</button>
+    </form>
+</div>
 
-</html>
+{{! ======================================================================= !}}
+{{> ./components/__footer.html.hbs }}

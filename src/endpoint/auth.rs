@@ -33,6 +33,7 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
     // Verify username
     if &params.username != &state.account.0 {
         flashes.push(Flash::Error("User not found".into()));
+        swap_flashes(session, flashes)?;
         return Ok(Redirect::new("/").into());
     }
 
@@ -43,6 +44,7 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
         Ok(()) => {}
         Err(_) => {
             flashes.push(Flash::Error("User not found".into()));
+            swap_flashes(session, flashes)?;
             return Ok(Redirect::new("/").into());
         }
     }
