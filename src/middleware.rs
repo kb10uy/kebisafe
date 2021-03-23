@@ -1,3 +1,5 @@
+//! Contains tide middlewares.
+
 use async_trait::async_trait;
 use log::error;
 use tide::{Middleware, Next, Request, Result as TideResult};

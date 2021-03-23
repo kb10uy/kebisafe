@@ -1,3 +1,5 @@
+//! Contains root-level endpoints.
+
 pub(crate) mod auth;
 
 use crate::{

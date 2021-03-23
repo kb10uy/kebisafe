@@ -1,3 +1,5 @@
+//! Contains session manipulation types and functions.
+
 use std::str;
 
 use aes_gcm_siv::{
@@ -29,6 +31,7 @@ pub enum Flash {
     Error(String),
 }
 
+/// Represents common session data.
 #[derive(Debug, Clone, Default)]
 pub struct Common {
     pub account: Option<Account>,
@@ -120,6 +123,7 @@ pub fn delete_account(session: &mut Session) -> Result<()> {
     Ok(())
 }
 
+/// Performs CSRF protection.
 #[macro_export]
 macro_rules! csrf_protect {
     ($req:expr, $t:expr) => {

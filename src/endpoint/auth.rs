@@ -1,3 +1,5 @@
+//! Contains authentication endpoints.
+
 use crate::{
     application::State,
     csrf_protect,
