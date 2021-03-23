@@ -9,6 +9,8 @@ use crate::{
     middleware::{ClientErrorLogMiddleware, FormValidationMiddleware, GracefulShutdownMiddleware},
 };
 
+use async_std::task::spawn;
+
 use anyhow::{format_err, Result};
 use argon2::{
     password_hash::{PasswordHasher, SaltString},
