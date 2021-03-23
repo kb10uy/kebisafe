@@ -6,7 +6,7 @@ mod template;
 
 use crate::{
     application::{Arguments, Environments, State, Subcommand},
-    middleware::{ClientErrorLogMiddleware, FormValidationMiddleware},
+    middleware::{ClientErrorLogMiddleware, FormValidationMiddleware, GracefulShutdownMiddleware},
 };
 
 use anyhow::{format_err, Result};
@@ -42,6 +42,8 @@ async fn run_server(envs: Environments) -> Result<()> {
     let mut app = tide::with_state(state.clone());
 
     // Middlewares
+    let graceful = GracefulShutdownMiddleware::new();
+    app.with(graceful.clone());
     app.with(ClientErrorLogMiddleware);
     app.with(SessionMiddleware::new(MemoryStore::new(), &secret_key));
     app.with(CorsMiddleware::new());
@@ -61,6 +63,7 @@ async fn run_server(envs: Environments) -> Result<()> {
     // Routes -----------------------------------------------------------------
 
     app.listen(envs.listen_at).await?;
+    graceful.terminate().await;
     Ok(())
 }
 
