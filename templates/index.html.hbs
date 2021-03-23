@@ -11,7 +11,7 @@
 </p>
 
 <div class="row">
-    <form action="/signin" method="POST">
+    <form id="signinForm" action="/signin" method="POST" data-manual="true">
         <input type="hidden" name="_token" value="{{ common.csrf }}">
         <div class="mb-3">
             <label for="username" class="form-label">Username</label>

@@ -16,7 +16,7 @@ use argon2::{
 };
 use clap::Clap;
 use rand::prelude::*;
-use tide::sessions::{MemoryStore, SessionMiddleware};
+use tide::{sessions::{MemoryStore, SessionMiddleware}, security::CorsMiddleware};
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -40,6 +40,7 @@ async fn run_server(envs: Environments) -> Result<()> {
 
     // Middlewares
     app.with(ClientErrorLogMiddleware);
+    app.with(CorsMiddleware::new());
     app.with(SessionMiddleware::new(MemoryStore::new(), &secret_key));
 
     // Routes -----------------------------------------------------------------

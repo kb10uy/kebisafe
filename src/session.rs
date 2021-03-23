@@ -128,11 +128,35 @@ pub fn delete_account(session: &mut Session) -> Result<()> {
 macro_rules! csrf_protect {
     ($req:expr, $t:expr) => {
         use tide::{http::StatusCode, Response};
+        use $crate::session::verify_csrf_token;
+
         let cipher = &$req.state().cipher;
         let session = $req.session();
-        match $crate::session::verify_csrf_token(cipher, session, $t) {
+        match verify_csrf_token(cipher, session, $t) {
             Ok(()) => (),
             Err(e) => return Ok(Response::builder(StatusCode::BadRequest).body(e.to_string()).build()),
         }
     };
+}
+
+/// Validates form data.
+/// If failed, add a flash message and redirect.
+#[macro_export]
+macro_rules! validate_form {
+    ($t:ty, $req:expr, $floc:expr) => ({
+        use tide::Redirect;
+        use $crate::session::{Flash, swap_flashes};
+
+        let form_data: Result<$t, _> = $req.body_form().await;
+        match form_data {
+            Ok(data) => data,
+            Err(e) => {
+                let session = $req.session_mut();
+                let mut old_flash = swap_flashes(session, vec![])?;
+                old_flash.push(Flash::Error(format!("Validation error: {}", e)));
+                swap_flashes(session, old_flash)?;
+                return Ok(Redirect::new($floc).into());
+            }
+        }
+    });
 }
