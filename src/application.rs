@@ -1,10 +1,6 @@
 //! Contains application common types.
 
-use async_std::{
-    net::SocketAddr,
-    path::{Path, PathBuf},
-    sync::Arc,
-};
+use async_std::{net::SocketAddr, sync::Arc};
 
 use aes_gcm_siv::{
     aead::{generic_array::GenericArray, NewAead},

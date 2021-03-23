@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
 
 async fn run_server(envs: Environments) -> Result<()> {
     let (state, secret_key) = State::new(&envs)?;
-    let mut app = tide::with_state(state.clone());
+    let mut app = tide::new();
 
     // Middlewares
     let graceful = GracefulShutdownMiddleware::new();
@@ -50,19 +50,24 @@ async fn run_server(envs: Environments) -> Result<()> {
     app.with(FormValidationMiddleware::new(state.cipher.clone()));
 
     // Routes -----------------------------------------------------------------
+    // To enable HTTP method deformation,
+    // we have to split route server and nest it at root.
+    let mut routes = tide::with_state(state);
+
     // Root
-    app.at("/").get(endpoint::index);
-    app.at("/public").serve_dir("./dist");
+    routes.at("/").get(endpoint::index);
+    routes.at("/public").serve_dir("./dist")?;
 
     // Authentication
-    app.at("/signin").get(endpoint::auth::render_signin);
-    app.at("/signin").post(endpoint::auth::signin);
-    app.at("/signout").delete(endpoint::auth::signout);
+    routes.at("/signin").get(endpoint::auth::render_signin);
+    routes.at("/signin").post(endpoint::auth::signin);
+    routes.at("/signout").delete(endpoint::auth::signout);
 
     // Media
-    app.at("/add").get(endpoint::add_flash);
+    routes.at("/add").get(endpoint::add_flash);
     // Routes -----------------------------------------------------------------
 
+    app.at("/").nest(routes);
     app.listen(envs.listen_at).await?;
     graceful.terminate().await;
     Ok(())

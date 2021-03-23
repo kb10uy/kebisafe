@@ -20,7 +20,7 @@
                         Admin
                         {{/if}}
                     </a>
-                    <ul class="dropdown-menu" aria-labelledby="navbarRight">
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarRight">
                         {{#if let Some(acc) = &account }}
                         <li>
                             <form action="/signout" method="post">
