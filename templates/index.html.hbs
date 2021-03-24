@@ -6,5 +6,18 @@
     Currently there are {{ pictures.len() }} picture(s).
 </p>
 
+{{#if let Some(_) = &common.account }}
+<div class="row">
+    <form id="uploadForm" action="/upload" method="POST">
+        <input type="hidden" name="_token" value="{{ common.csrf }}">
+        <div class="mb-3">
+            <label for="upload_file" class="form-label">Upload file (JPEG, PNG, GIF, webp)</label>
+            <input class="form-control" type="file" id="upload_file" name="upload_file" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Upload</button>
+    </form>
+</div>
+{{/if}}
+
 {{! ======================================================================= !}}
 {{> ./components/__footer.html.hbs }}
