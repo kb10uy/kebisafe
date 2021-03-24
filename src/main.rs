@@ -1,7 +1,7 @@
 mod application;
 mod endpoint;
 mod middleware;
-mod session;
+mod action;
 mod template;
 
 use crate::{

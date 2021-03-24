@@ -4,8 +4,8 @@ pub(crate) mod auth;
 pub(crate) mod media;
 
 use crate::{
+    action::session::{swap_flashes, Common, Flash},
     application::State,
-    session::{swap_flashes, Common, Flash},
     template,
 };
 

@@ -1,6 +1,6 @@
 //! Defines template types.
 
-use crate::session::{Common, Flash};
+use crate::action::session::{Common, Flash};
 
 use yarte::Template;
 

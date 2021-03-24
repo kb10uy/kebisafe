@@ -1,6 +1,6 @@
 //! Contains tide middlewares.
 
-use crate::session::verify_csrf_token;
+use crate::action::session::verify_csrf_token;
 
 use async_std::sync::{Arc, RwLock};
 use std::{

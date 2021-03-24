@@ -1,8 +1,8 @@
 //! Contains authentication endpoints.
 
 use crate::{
+    action::session::{delete_account, set_account, swap_flashes, Account, Common, Flash},
     application::State,
-    session::{delete_account, set_account, swap_flashes, Account, Common, Flash},
     template, validate_form,
 };
 

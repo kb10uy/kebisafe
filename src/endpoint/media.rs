@@ -1,8 +1,8 @@
 //! Contains media endpoints.
 
 use crate::{
+    action::session::{swap_flashes, Common, Flash},
     application::State,
-    session::{swap_flashes, Common, Flash},
     template,
 };
 

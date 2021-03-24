@@ -3,4 +3,5 @@
 /.cache
 /.parcel-cache
 /dist
+/media
 /.env

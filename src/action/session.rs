@@ -120,7 +120,7 @@ pub fn delete_account(session: &mut Session) -> Result<()> {
 macro_rules! validate_form {
     ($t:ty, $req:expr, $floc:expr) => ({
         use tide::Redirect;
-        use $crate::session::{Flash, swap_flashes};
+        use $crate::action::session::{Flash, swap_flashes};
 
         let form_data: Result<$t, _> = $req.body_form().await;
         match form_data {
