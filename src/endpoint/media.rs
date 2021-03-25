@@ -1,7 +1,10 @@
 //! Contains media endpoints.
 
 use crate::{
-    action::session::{swap_flashes, Common, Flash},
+    action::{
+        media::validate_image_file,
+        session::{swap_flashes, Common, Flash},
+    },
     application::State,
     template,
 };
@@ -9,6 +12,7 @@ use crate::{
 use async_std::sync::Arc;
 use std::io::{prelude::*, Cursor};
 
+use anyhow::bail;
 use multipart::server::Multipart;
 use tide::{
     http::{mime, StatusCode},
@@ -41,5 +45,12 @@ pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
             _ => (),
         }
     }
+
+    let (bytes, filename) = match file {
+        Some(file) => file,
+        None => return Ok(Response::builder(StatusCode::BadRequest).body("Invalid multipart request").build()),
+    };
+    let validated_image = validate_image_file(&filename, &bytes)?;
+
     todo!();
 }
