@@ -14,6 +14,12 @@ static HASH_CHARS: Lazy<Box<[char]>> = Lazy::new(|| "0123456789abcdefghijklmnopq
 const HASH_MIN_LENGTH: usize = 6;
 const MAX_RETRY: usize = 5;
 
+/// Counts all records.
+pub async fn fetch_records_count(pool: &PgPool) -> Result<usize> {
+    let (count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM media;").fetch_one(pool).await?;
+    Ok(count as usize)
+}
+
 /// Reserves a database record for media.
 pub async fn reserve_media_record(pool: &PgPool, validated_image: &ValidatedImage, thumbnail: bool) -> Result<Media> {
     let extension = validated_image

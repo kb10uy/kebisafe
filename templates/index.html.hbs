@@ -3,12 +3,12 @@
 
 <h1>Kebisafe</h1>
 <p>
-    Currently there are {{ pictures.len() }} picture(s).
+    Currently there are {{ pictures_count }} picture(s).
 </p>
 
 {{#if let Some(_) = &common.account }}
 <div class="row">
-    <form id="uploadForm" action="/upload" method="POST">
+    <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="_token" value="{{ common.csrf }}">
         <div class="mb-3">
             <label for="upload_file" class="form-label">Upload file (JPEG, PNG, GIF, WebP)</label>

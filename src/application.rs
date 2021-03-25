@@ -10,12 +10,14 @@ use anyhow::Result;
 use clap::Clap;
 use data_encoding::HEXLOWER_PERMISSIVE;
 use serde::Deserialize;
+use sqlx::PgPool;
 
 /// Captured environment variables.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Environments {
     pub listen_at: SocketAddr,
     pub secret_key: String,
+    pub database_uri: String,
     pub account_name: String,
     pub account_password: String,
 }
@@ -43,20 +45,25 @@ pub struct State {
     /// Cipher
     pub cipher: Aes256GcmSiv,
 
+    /// Database connection pool
+    pub pool: PgPool,
+
     /// Account's name and password hash.
     pub account: (String, String),
 }
 
 impl State {
     /// Constructs new application state.
-    pub fn new(envs: &Environments) -> Result<(Arc<State>, Box<[u8]>)> {
+    pub async fn new(envs: &Environments) -> Result<(Arc<State>, Box<[u8]>)> {
         let secret_key = HEXLOWER_PERMISSIVE.decode(envs.secret_key.as_bytes())?.into_boxed_slice();
         let key_array = GenericArray::from_slice(&secret_key);
         let cipher = Aes256GcmSiv::new(key_array);
+        let pool = PgPool::connect(&envs.database_uri).await?;
 
         Ok((
             Arc::new(State {
                 cipher,
+                pool,
                 account: (envs.account_name.clone(), envs.account_password.clone()),
             }),
             secret_key,

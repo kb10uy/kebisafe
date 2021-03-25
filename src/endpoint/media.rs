@@ -2,7 +2,7 @@
 
 use crate::{
     action::{
-        media::validate_image_file,
+        media::{create_thumbnail, validate_image_file},
         session::{swap_flashes, Common, Flash},
     },
     application::State,
@@ -10,6 +10,7 @@ use crate::{
 };
 
 use async_std::sync::Arc;
+use image::GenericImageView;
 use std::io::{prelude::*, Cursor};
 
 use anyhow::bail;
@@ -25,7 +26,7 @@ use yarte::Template;
 pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
     let content_type = request.content_type().unwrap();
     let boundary = match content_type.param("boundary") {
-        Some(b) if content_type.essence() != mime::MULTIPART_FORM.essence() => b.as_str(),
+        Some(b) if content_type.essence() == mime::MULTIPART_FORM.essence() => b.as_str(),
         _ => return Ok(Response::builder(StatusCode::BadRequest).body("Invalid multipart request").build()),
     };
 
@@ -45,12 +46,28 @@ pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
             _ => (),
         }
     }
-
     let (bytes, filename) = match file {
         Some(file) => file,
         None => return Ok(Response::builder(StatusCode::BadRequest).body("Invalid multipart request").build()),
     };
-    let validated_image = validate_image_file(&filename, &bytes)?;
 
-    todo!();
+    let validated_image = validate_image_file(&filename, &bytes)?;
+    let thumbnail = create_thumbnail(&validated_image.image);
+
+    let (width, height) = validated_image.image.dimensions();
+    let message = format!(
+        r#"
+        Image: {}
+        Type: {:?}
+        Size: {}x{}
+        Thumbnail: {}
+    "#,
+        filename,
+        validated_image.format,
+        width,
+        height,
+        thumbnail.is_some()
+    );
+
+    Ok(Response::builder(StatusCode::Ok).content_type(mime::PLAIN).body(message).build())
 }

@@ -8,7 +8,7 @@ use yarte::Template;
 #[template(path = "index.html.hbs")]
 pub struct Index {
     pub common: Common,
-    pub pictures: Vec<String>,
+    pub pictures_count: usize,
 }
 
 #[derive(Debug, Template)]

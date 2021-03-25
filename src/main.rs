@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
 }
 
 async fn run_server(envs: Environments) -> Result<()> {
-    let (state, secret_key) = State::new(&envs)?;
+    let (state, secret_key) = State::new(&envs).await?;
     let mut app = tide::new();
 
     // Middlewares
@@ -65,7 +65,7 @@ async fn run_server(envs: Environments) -> Result<()> {
     routes.at("/signout").delete(endpoint::auth::signout);
 
     // Media
-    routes.at("/add").get(endpoint::add_flash);
+    routes.at("/upload").post(endpoint::media::upload);
     // Routes -----------------------------------------------------------------
 
     app.at("/").nest(routes);

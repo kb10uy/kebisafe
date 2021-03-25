@@ -12,7 +12,7 @@ use std::{
 use aes_gcm_siv::Aes256GcmSiv;
 use anyhow::{bail, format_err, Result};
 use async_trait::async_trait;
-use log::{error, info};
+use log::{error, info, warn};
 use multipart::server::Multipart;
 use serde::Deserialize;
 use tide::{
@@ -135,10 +135,11 @@ impl<State: 'static + Send + Sync + Clone> Middleware<State> for FormValidationM
             return Ok(response);
         }
 
+        info!("Attempting CSRF protection");
         let body_bytes = request.body_bytes().await?;
         let form_data = match request.content_type() {
-            Some(m) if m == mime::FORM => serde_urlencoded::from_bytes(&body_bytes)?,
-            Some(m) if m == mime::MULTIPART_FORM => {
+            Some(m) if m.essence() == mime::FORM.essence() => serde_urlencoded::from_bytes(&body_bytes)?,
+            Some(m) if m.essence() == mime::MULTIPART_FORM.essence() => {
                 let mut multipart = Multipart::with_body(
                     Cursor::new(&body_bytes[..]),
                     m.param("boundary")
@@ -165,7 +166,10 @@ impl<State: 'static + Send + Sync + Clone> Middleware<State> for FormValidationM
 
                 form_data
             }
-            _ => return Ok(Response::builder(StatusCode::BadRequest).build()),
+            m => {
+                warn!("Unsupported Content-Type: {:?}", m);
+                return Ok(Response::builder(StatusCode::BadRequest).build());
+            }
         };
 
         // HTTP method deformation
@@ -179,11 +183,19 @@ impl<State: 'static + Send + Sync + Clone> Middleware<State> for FormValidationM
         // CSRF token validation
         if !ALLOWED_METHODS.contains(&request.method()) {
             match form_data.token {
-                Some(token) if verify_csrf_token(&self.cipher, request.session(), &token).is_ok() => (),
-                _ => return Ok(Response::builder(StatusCode::BadRequest).build()),
+                Some(token) => match verify_csrf_token(&self.cipher, request.session(), &token) {
+                    Ok(()) => info!("CSRF protection succeeded"),
+                    Err(e) => {
+                        warn!("CSRF protection failed: {}", e);
+                        return Ok(Response::builder(StatusCode::BadRequest).build());
+                    }
+                },
+                None => {
+                    warn!("CSRF token missing");
+                    return Ok(Response::builder(StatusCode::BadRequest).build());
+                }
             }
         }
-        info!("CSRF protection succeeded");
 
         request.set_body(body_bytes);
         let response = next.run(request).await;
