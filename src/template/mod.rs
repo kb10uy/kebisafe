@@ -21,6 +21,13 @@ pub struct Signin {
 }
 
 #[derive(Debug, Template)]
+#[template(path = "media-list.html.hbs")]
+pub struct MediaList {
+    pub common: Common,
+    pub media_list: Vec<MediaEntity>,
+}
+
+#[derive(Debug, Template)]
 #[template(path = "media.html.hbs")]
 pub struct Media {
     pub common: Common,

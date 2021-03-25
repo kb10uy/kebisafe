@@ -64,7 +64,7 @@ impl Common {
     /// Generates thumbnail media permalink.
     pub fn permalink_thumbnail(&self, media: &Media) -> String {
         if media.has_thumbnail {
-            let relative = format!("/media/thumbnails{}.{}", media.hash_id, media.extension);
+            let relative = format!("/media/thumbnails/{}.{}", media.hash_id, "jpg");
             self.hosted_at.join(&relative).map(|url| url.to_string()).unwrap_or_default()
         } else {
             self.permalink_original(media)

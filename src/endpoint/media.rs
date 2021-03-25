@@ -2,7 +2,7 @@
 
 use crate::{
     action::{
-        database::{fetch_media, reserve_media_record},
+        database::{fetch_media, fetch_media_list, reserve_media_record},
         media::{create_thumbnail, save_image, validate_image_file},
         session::{swap_flashes, Common, Flash},
     },
@@ -21,7 +21,23 @@ use tide::{
 };
 use yarte::Template;
 
-/// `GET /`
+const MEDIA_LIST_COUNT: usize = 50;
+
+/// `GET /m`
+/// Shows a media.
+pub async fn list_media(mut request: Request<Arc<State>>) -> TideResult {
+    let state = request.state().clone();
+    let session = request.session_mut();
+
+    let media_list = fetch_media_list(&state.pool, None, MEDIA_LIST_COUNT).await?;
+    let common = Common::new(&state, session, vec![])?;
+    Ok(Response::builder(StatusCode::Ok)
+        .content_type(mime::HTML)
+        .body(template::MediaList { common, media_list }.call()?)
+        .build())
+}
+
+/// `GET /m/:hash_id`
 /// Shows a media.
 pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
     let state = request.state().clone();

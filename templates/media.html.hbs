@@ -5,15 +5,14 @@
 </div>
 
 <div class="row text-center my-2">
-    {{ let path = format!("/media/{}.{}", self.media.hash_id, self.media.extension) }}
     <span id="imageContainer">
-        <img src="{{ path }}" alt="{{ media.hash_id }}" class="img-fluid">
+        <img src="{{ common.permalink_original(&media) }}" alt="{{ media.hash_id }}" class="img-fluid">
     </span>
 </div>
 
 <div class="row">
     <h2>Details</h2>
-    <div class="col-sm">
+    <div class="col-sm-12">
         <table class="table">
             <tbody>
                 <tr>

@@ -3,7 +3,7 @@
 use crate::{action::media::ValidatedImage, entity::Media};
 
 use anyhow::{anyhow, Result};
-use chrono::prelude::*;
+use chrono::{prelude::*, MAX_DATETIME};
 use image::GenericImageView;
 use log::info;
 use once_cell::sync::Lazy;
@@ -20,12 +20,24 @@ pub async fn fetch_records_count(pool: &PgPool) -> Result<usize> {
     Ok(count as usize)
 }
 
-/// Fetched a media record.
+/// Fetches a media record.
 pub async fn fetch_media(pool: &PgPool, hash_id: &str) -> Result<Option<Media>> {
     let media = sqlx::query_as("SELECT * FROM media WHERE hash_id = $1;")
         .bind(hash_id)
         .fetch_optional(pool)
         .await?;
+
+    Ok(media)
+}
+
+/// Fetches media list.
+pub async fn fetch_media_list(pool: &PgPool, latest: Option<DateTime<Local>>, limit: usize) -> Result<Vec<Media>> {
+    let query_str = if latest.is_some() {
+        "SELECT * FROM media WHERE uploaded < $1 ORDER BY uploaded DESC LIMIT $2;"
+    } else {
+        "SELECT * FROM media ORDER BY uploaded DESC LIMIT $2;"
+    };
+    let media = sqlx::query_as(query_str).bind(latest).bind(limit as i64).fetch_all(pool).await?;
 
     Ok(media)
 }
