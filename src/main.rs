@@ -57,7 +57,8 @@ async fn run_server(envs: Environments) -> Result<()> {
 
     // Root
     routes.at("/").get(endpoint::index);
-    routes.at("/public").serve_dir("./dist")?;
+    routes.at("/public").serve_dir(&envs.public_dir)?;
+    routes.at("/media").serve_dir(&envs.media_dir)?;
 
     // Authentication
     routes.at("/signin").get(endpoint::auth::render_signin);
@@ -65,6 +66,7 @@ async fn run_server(envs: Environments) -> Result<()> {
     routes.at("/signout").delete(endpoint::auth::signout);
 
     // Media
+    routes.at("/m/:hash_id").get(endpoint::media::media);
     routes.at("/upload").post(endpoint::media::upload);
     // Routes -----------------------------------------------------------------
 

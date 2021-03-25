@@ -20,6 +20,16 @@ pub async fn fetch_records_count(pool: &PgPool) -> Result<usize> {
     Ok(count as usize)
 }
 
+/// Fetched a media record.
+pub async fn fetch_media(pool: &PgPool, hash_id: &str) -> Result<Option<Media>> {
+    let media = sqlx::query_as("SELECT * FROM media WHERE hash_id = $1;")
+        .bind(hash_id)
+        .fetch_optional(pool)
+        .await?;
+
+    Ok(media)
+}
+
 /// Reserves a database record for media.
 pub async fn reserve_media_record(pool: &PgPool, validated_image: &ValidatedImage, thumbnail: bool) -> Result<Media> {
     let extension = validated_image
@@ -46,7 +56,7 @@ pub async fn reserve_media_record(pool: &PgPool, validated_image: &ValidatedImag
                 height,
                 uploaded
             ) VALUES (
-                ?, ?, ?, ?, ?, ?
+                $1, $2, $3, $4, $5, $6
             ) RETURNING *;
         "#,
         )

@@ -1,10 +1,12 @@
 {{> ./components/__header.html.hbs }}
 {{! ======================================================================= !}}
 
-<h1>Kebisafe</h1>
-<p>
-    Currently there are {{ pictures_count }} picture(s).
-</p>
+<div class="row">
+    <h1>Kebisafe</h1>
+    <p>
+        Currently there are {{ pictures_count }} picture(s).
+    </p>
+</div>
 
 {{#if let Some(_) = &common.account }}
 <div class="row">

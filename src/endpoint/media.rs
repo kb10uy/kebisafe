@@ -2,7 +2,7 @@
 
 use crate::{
     action::{
-        database::reserve_media_record,
+        database::{fetch_media, reserve_media_record},
         media::{create_thumbnail, save_image, validate_image_file},
         session::{swap_flashes, Common, Flash},
     },
@@ -13,8 +13,6 @@ use crate::{
 use async_std::{sync::Arc, task::spawn};
 use std::io::{prelude::*, Cursor};
 
-use anyhow::bail;
-use futures::join;
 use image::ImageFormat;
 use multipart::server::Multipart;
 use tide::{
@@ -22,6 +20,35 @@ use tide::{
     Redirect, Request, Response, Result as TideResult,
 };
 use yarte::Template;
+
+/// `GET /`
+/// Shows a media.
+pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
+    let state = request.state().clone();
+    let hash_id = request.param("hash_id").expect("hash_id must be set").to_string();
+    let session = request.session_mut();
+
+    let media_record = match fetch_media(&state.pool, &hash_id).await? {
+        Some(m) => m,
+        None => {
+            let flashes = vec![Flash::Error(format!("Media {} not found", hash_id))];
+            swap_flashes(session, flashes)?;
+            return Ok(Redirect::new("/").into());
+        }
+    };
+
+    let common = Common::with_csrf_token(session, vec![], &state.cipher)?;
+    Ok(Response::builder(StatusCode::Ok)
+        .content_type(mime::HTML)
+        .body(
+            template::Media {
+                common,
+                media: media_record,
+            }
+            .call()?,
+        )
+        .build())
+}
 
 /// POST `/upload`
 /// Uploads a file.
@@ -75,5 +102,10 @@ pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
         spawn(async move { save_image(&validated_image.image, validated_image.format, &filename) }).await?;
     }
 
+    let flashes = vec![Flash::Info(format!(
+        "Media has been uploaded successfully! ID is {}",
+        record.hash_id
+    ))];
+    swap_flashes(session, flashes)?;
     Ok(Redirect::new(format!("/m/{}", record.hash_id)).into())
 }

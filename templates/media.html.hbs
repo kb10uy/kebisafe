@@ -1,5 +1,36 @@
 {{> ./components/__header.html.hbs }}
 {{! ======================================================================= !}}
+<div class="row">
+    <h1>Kebisafe media: <code>{{ media.hash_id }}</code></h1>
+</div>
 
+<div class="row text-center my-2">
+    {{ let path = format!("/media/{}.{}", self.media.hash_id, self.media.extension) }}
+    <span id="imageContainer">
+        <img src="{{ path }}" alt="{{ media.hash_id }}" class="img-fluid">
+    </span>
+</div>
+
+<div class="row">
+    <h2>Details</h2>
+    <div class="col-sm">
+        <table class="table">
+            <tbody>
+                <tr>
+                    <th>Hash ID</th>
+                    <td><code>{{ media.hash_id }}</code></td>
+                </tr>
+                <tr>
+                    <th>Dimensions</th>
+                    <td>{{ media.width }} x {{ media.height }}</td>
+                </tr>
+                <tr>
+                    <th>Uploaded at</th>
+                    <td>{{ media.uploaded.format("%Y/%m/%d %T (%z)").to_string() }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 {{! ======================================================================= !}}
 {{> ./components/__footer.html.hbs }}
