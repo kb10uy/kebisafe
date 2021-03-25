@@ -1,6 +1,8 @@
 //! Contains application common types.
 
-use async_std::{net::SocketAddr, sync::Arc};
+use std::convert::TryFrom;
+
+use async_std::{path::PathBuf, sync::Arc};
 
 use aes_gcm_siv::{
     aead::{generic_array::GenericArray, NewAead},
@@ -15,7 +17,9 @@ use sqlx::PgPool;
 /// Captured environment variables.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
 pub struct Environments {
-    pub listen_at: SocketAddr,
+    pub public_dir: String,
+    pub media_dir: String,
+    pub listen_at: String,
     pub secret_key: String,
     pub database_uri: String,
     pub account_name: String,
@@ -42,6 +46,8 @@ pub enum Subcommand {
 /// Shared application state for the server.
 #[derive(Clone)]
 pub struct State {
+    pub media_root: PathBuf,
+
     /// Cipher
     pub cipher: Aes256GcmSiv,
 
@@ -55,6 +61,7 @@ pub struct State {
 impl State {
     /// Constructs new application state.
     pub async fn new(envs: &Environments) -> Result<(Arc<State>, Box<[u8]>)> {
+        let media_root = PathBuf::try_from(&envs.media_dir)?;
         let secret_key = HEXLOWER_PERMISSIVE.decode(envs.secret_key.as_bytes())?.into_boxed_slice();
         let key_array = GenericArray::from_slice(&secret_key);
         let cipher = Aes256GcmSiv::new(key_array);
@@ -62,6 +69,7 @@ impl State {
 
         Ok((
             Arc::new(State {
+                media_root,
                 cipher,
                 pool,
                 account: (envs.account_name.clone(), envs.account_password.clone()),

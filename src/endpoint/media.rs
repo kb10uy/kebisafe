@@ -3,18 +3,19 @@
 use crate::{
     action::{
         database::reserve_media_record,
-        media::{create_thumbnail, validate_image_file},
+        media::{create_thumbnail, save_image, validate_image_file},
         session::{swap_flashes, Common, Flash},
     },
     application::State,
     template,
 };
 
-use async_std::sync::Arc;
-use image::GenericImageView;
+use async_std::{sync::Arc, task::spawn};
 use std::io::{prelude::*, Cursor};
 
 use anyhow::bail;
+use futures::join;
+use image::ImageFormat;
 use multipart::server::Multipart;
 use tide::{
     http::{mime, StatusCode},
@@ -65,21 +66,14 @@ pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
     let thumbnail = create_thumbnail(&validated_image.image);
 
     let record = reserve_media_record(&state.pool, &validated_image, thumbnail.is_some()).await?;
+    let filename = state.media_root.join(format!("{}.{}", record.hash_id, record.extension));
+    let thumb_filename = state.media_root.join(format!("thumbnails/{}.jpg", record.hash_id));
+    if let Some(thumb) = thumbnail {
+        spawn(async move { save_image(&thumb, ImageFormat::Jpeg, &thumb_filename) }).await?;
+        spawn(async move { save_image(&validated_image.image, validated_image.format, &filename) }).await?;
+    } else {
+        spawn(async move { save_image(&validated_image.image, validated_image.format, &filename) }).await?;
+    }
 
-    let (width, height) = validated_image.image.dimensions();
-    let message = format!(
-        r#"
-        Image: {}
-        Type: {:?}
-        Size: {}x{}
-        Thumbnail: {}
-    "#,
-        filename,
-        validated_image.format,
-        width,
-        height,
-        thumbnail.is_some()
-    );
-
-    Ok(Response::builder(StatusCode::Ok).content_type(mime::PLAIN).body(message).build())
+    Ok(Redirect::new(format!("/m/{}", record.hash_id)).into())
 }

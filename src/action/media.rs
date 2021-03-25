@@ -1,16 +1,17 @@
 //! Contains media manipulations.
 
+use std::{fs::File as SyncFile, io::BufWriter as SyncBufWriter, path::Path as SyncPath};
+
 use async_std::path::Path;
 
 use anyhow::{bail, Result};
-use image::{imageops::FilterType, DynamicImage, GenericImageView, ImageFormat};
+use image::{gif::GifEncoder, imageops::FilterType, jpeg::JpegEncoder, png::PngEncoder, DynamicImage, GenericImageView, ImageFormat};
 use mime_guess::MimeGuess;
 
 const ALLOWED_TYPES: &[(&str, ImageFormat)] = &[
     ("image/png", ImageFormat::Png),
     ("image/jpeg", ImageFormat::Jpeg),
     ("image/gif", ImageFormat::Gif),
-    ("image/webp", ImageFormat::WebP),
 ];
 
 const THUMBNAIL_WIDTH: u32 = 320;
@@ -73,4 +74,28 @@ pub fn create_thumbnail(original_image: &DynamicImage) -> Option<DynamicImage> {
         let scaled = original_image.resize(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, FilterType::Triangle);
         Some(scaled)
     }
+}
+
+/// Saves image into file.
+pub fn save_image(image: &DynamicImage, format: ImageFormat, path: impl AsRef<SyncPath>) -> Result<()> {
+    let (width, height) = image.dimensions();
+    let color_type = image.color();
+
+    let mut target_file = SyncBufWriter::new(SyncFile::create(path)?);
+    match format {
+        ImageFormat::Png => {
+            let encoder = PngEncoder::new(target_file);
+            encoder.encode(image.as_bytes(), width, height, color_type)?;
+        }
+        ImageFormat::Jpeg => {
+            let mut encoder = JpegEncoder::new(&mut target_file);
+            encoder.encode(image.as_bytes(), width, height, color_type)?;
+        }
+        ImageFormat::Gif => {
+            let mut encoder = GifEncoder::new(target_file);
+            encoder.encode(image.as_bytes(), width, height, color_type)?;
+        }
+        _ => bail!("Unsupported file type"),
+    }
+    Ok(())
 }
