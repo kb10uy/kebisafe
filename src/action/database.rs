@@ -33,9 +33,8 @@ pub async fn reserve_media_record(pool: &PgPool, validated_image: &ValidatedImag
         let length = HASH_MIN_LENGTH + i;
         info!("Attempting {}... ({} chars)", i + 1, length);
 
-        let mut rng = thread_rng();
         let chars = HASH_CHARS.as_ref();
-        let hash: String = chars.choose_multiple(&mut rng, length).collect();
+        let hash: String = chars.choose_multiple(&mut thread_rng(), length).collect();
 
         let query_result = sqlx::query_as(
             r#"
@@ -71,7 +70,7 @@ pub async fn reserve_media_record(pool: &PgPool, validated_image: &ValidatedImag
 }
 
 /// Judges whether given `DatabaseError` implies constraint errors.
-pub fn is_conflicting(sql_err: &dyn DatabaseError) -> bool {
+fn is_conflicting(sql_err: &dyn DatabaseError) -> bool {
     // On Postgres (and MySQL), SQLSTATE 23___ represents constraint error
     // https://www.postgresql.org/docs/13/errcodes-appendix.html
     // https://dev.mysql.com/doc/mysql-errors/8.0/en/server-error-reference.html
