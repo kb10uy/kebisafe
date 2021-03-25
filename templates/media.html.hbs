@@ -28,6 +28,18 @@
                     <th>Uploaded at</th>
                     <td>{{ media.uploaded.format("%Y/%m/%d %T (%z)").to_string() }}</td>
                 </tr>
+                <tr>
+                    <th>Original media permalink</th>
+                    <td>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" placeholder="Original media permalink"
+                                aria-label="Original media permalink" aria-describedby="copyOriginalPermalink"
+                                id="originalPermalink" value="{{ common.permalink_original(&media) }}" readonly>
+                            <button class="btn btn-outline-secondary clipboard" type="button" id="copyOriginalPermalink"
+                                data-clipboard-target="#originalPermalink">Copy</button>
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>

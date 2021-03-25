@@ -1,6 +1,6 @@
 //! Contains session manipulation types and functions.
 
-use crate::application::State;
+use crate::{application::State, entity::Media};
 
 use std::str;
 
@@ -53,6 +53,22 @@ impl Common {
             flashes: swap_flashes(session, new_flashes)?,
             csrf,
         })
+    }
+
+    /// Generates original media permalink.
+    pub fn permalink_original(&self, media: &Media) -> String {
+        let relative = format!("/media/{}.{}", media.hash_id, media.extension);
+        self.hosted_at.join(&relative).map(|url| url.to_string()).unwrap_or_default()
+    }
+
+    /// Generates thumbnail media permalink.
+    pub fn permalink_thumbnail(&self, media: &Media) -> String {
+        if media.has_thumbnail {
+            let relative = format!("/media/thumbnails{}.{}", media.hash_id, media.extension);
+            self.hosted_at.join(&relative).map(|url| url.to_string()).unwrap_or_default()
+        } else {
+            self.permalink_original(media)
+        }
     }
 }
 

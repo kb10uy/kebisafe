@@ -37,6 +37,7 @@
   "dependencies": {
     "@popperjs/core": "^2.9.1",
     "axios": "^0.21.1",
-    "bootstrap": "^5.0.0-beta2"
+    "bootstrap": "^5.0.0-beta2",
+    "clipboard": "^2.0.8"
   }
 }
