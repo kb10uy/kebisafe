@@ -135,6 +135,32 @@ pub fn delete_account(session: &mut Session) -> Result<()> {
     Ok(())
 }
 
+/// Fetches account information from the session.
+pub fn get_account(session: &Session) -> Option<Account> {
+    session.get(SESSION_ACCOUNT)
+}
+
+/// Ensures current session is signed in by owner.
+/// If not, redirect to sign in page.
+#[macro_export]
+macro_rules! ensure_login {
+    ($req:expr) => {{
+        use tide::Redirect;
+        use $crate::action::session::{get_account, swap_flashes, Flash};
+
+        let session = $req.session_mut();
+        match get_account(session) {
+            Some(account) => account,
+            None => {
+                let mut old_flash = swap_flashes(session, vec![])?;
+                old_flash.push(Flash::Info(format!("Please sign in")));
+                swap_flashes(session, old_flash)?;
+                return Ok(Redirect::new("/signin").into());
+            }
+        }
+    }};
+}
+
 /// Validates form data.
 /// If failed, add a flash message and redirect.
 #[macro_export]

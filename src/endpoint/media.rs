@@ -7,7 +7,7 @@ use crate::{
         session::{swap_flashes, Common, Flash},
     },
     application::State,
-    template,
+    ensure_login, template,
 };
 
 use async_std::{sync::Arc, task::spawn};
@@ -53,6 +53,8 @@ pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
 /// POST `/upload`
 /// Uploads a file.
 pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
+    ensure_login!(request);
+
     let content_type = request.content_type().unwrap();
     let boundary = match content_type.param("boundary") {
         Some(b) if content_type.essence() == mime::MULTIPART_FORM.essence() => b.as_str(),
