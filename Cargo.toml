@@ -91,6 +91,9 @@ features = ["runtime-async-std-native-tls", "sqlite", "postgres", "chrono"]
 [dependencies.tide]
 version = "0.16.0"
 
+[dependencies.url]
+version = "2.2.1"
+
 [dependencies.mime_guess]
 version = "2.0.3"
 

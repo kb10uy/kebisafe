@@ -13,6 +13,7 @@ use clap::Clap;
 use data_encoding::HEXLOWER_PERMISSIVE;
 use serde::Deserialize;
 use sqlx::PgPool;
+use url::Url;
 
 /// Captured environment variables.
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
@@ -20,6 +21,7 @@ pub struct Environments {
     pub public_dir: String,
     pub media_dir: String,
     pub listen_at: String,
+    pub hosted_at: String,
     pub secret_key: String,
     pub database_uri: String,
     pub account_name: String,
@@ -46,7 +48,11 @@ pub enum Subcommand {
 /// Shared application state for the server.
 #[derive(Clone)]
 pub struct State {
+    /// Local media root
     pub media_root: PathBuf,
+
+    /// Root URL at which hosted
+    pub hosted_at: Url,
 
     /// Cipher
     pub cipher: Aes256GcmSiv,
@@ -62,6 +68,7 @@ impl State {
     /// Constructs new application state.
     pub async fn new(envs: &Environments) -> Result<(Arc<State>, Box<[u8]>)> {
         let media_root = PathBuf::try_from(&envs.media_dir)?;
+        let hosted_at = Url::parse(&envs.hosted_at)?;
         let secret_key = HEXLOWER_PERMISSIVE.decode(envs.secret_key.as_bytes())?.into_boxed_slice();
         let key_array = GenericArray::from_slice(&secret_key);
         let cipher = Aes256GcmSiv::new(key_array);
@@ -70,6 +77,7 @@ impl State {
         Ok((
             Arc::new(State {
                 media_root,
+                hosted_at,
                 cipher,
                 pool,
                 account: (envs.account_name.clone(), envs.account_password.clone()),

@@ -1636,6 +1636,7 @@ dependencies = [
  "serde_urlencoded",
  "sqlx",
  "tide",
+ "url",
  "yarte",
 ]
 

@@ -1,5 +1,7 @@
 //! Contains session manipulation types and functions.
 
+use crate::application::State;
+
 use std::str;
 
 use aes_gcm_siv::{
@@ -12,6 +14,7 @@ use data_encoding::BASE64;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use tide::sessions::Session;
+use url::Url;
 
 const TOKEN_EXPIARY: i64 = 86400;
 const SESSION_ACCOUNT: &'static str = "kebisafe.account";
@@ -32,8 +35,9 @@ pub enum Flash {
 }
 
 /// Represents common session data.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Common {
+    pub hosted_at: Url,
     pub account: Option<Account>,
     pub flashes: Vec<Flash>,
     pub csrf: String,
@@ -41,9 +45,10 @@ pub struct Common {
 
 impl Common {
     /// Constructs with CSRF token.
-    pub fn with_csrf_token(session: &mut Session, new_flashes: Vec<Flash>, cipher: &Aes256GcmSiv) -> Result<Common> {
-        let csrf = generate_csrf_token(cipher, session)?;
+    pub fn new(state: &State, session: &mut Session, new_flashes: Vec<Flash>) -> Result<Common> {
+        let csrf = generate_csrf_token(&state.cipher, session)?;
         Ok(Common {
+            hosted_at: state.hosted_at.clone(),
             account: session.get(SESSION_ACCOUNT),
             flashes: swap_flashes(session, new_flashes)?,
             csrf,
@@ -118,9 +123,9 @@ pub fn delete_account(session: &mut Session) -> Result<()> {
 /// If failed, add a flash message and redirect.
 #[macro_export]
 macro_rules! validate_form {
-    ($t:ty, $req:expr, $floc:expr) => ({
+    ($t:ty, $req:expr, $floc:expr) => {{
         use tide::Redirect;
-        use $crate::action::session::{Flash, swap_flashes};
+        use $crate::action::session::{swap_flashes, Flash};
 
         let form_data: Result<$t, _> = $req.body_form().await;
         match form_data {
@@ -133,5 +138,5 @@ macro_rules! validate_form {
                 return Ok(Redirect::new($floc).into());
             }
         }
-    });
+    }};
 }
