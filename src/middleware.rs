@@ -75,6 +75,7 @@ impl GracefulShutdownMiddleware {
             Some(sb) => {
                 sb.terminating.store(true, Ordering::Release);
                 let _ = locked.take();
+                info!("Termination ordered");
             }
             None => (),
         }

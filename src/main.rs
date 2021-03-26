@@ -16,6 +16,7 @@ use argon2::{
     Argon2,
 };
 use clap::Clap;
+use log::debug;
 use rand::prelude::*;
 use tide::{security::CorsMiddleware, sessions::SessionMiddleware};
 
@@ -36,6 +37,8 @@ async fn main() -> Result<()> {
 }
 
 async fn run_server(envs: Environments) -> Result<()> {
+    debug!("Started to run server");
+
     let (state, secret_key) = State::new(&envs).await?;
     let mut app = tide::new();
 
@@ -75,6 +78,8 @@ async fn run_server(envs: Environments) -> Result<()> {
 }
 
 async fn generate_password() -> Result<()> {
+    debug!("Generating password hash");
+
     let mut rng = thread_rng();
     let raw_password = rpassword::read_password_from_tty(Some("Type your password: "))?;
 

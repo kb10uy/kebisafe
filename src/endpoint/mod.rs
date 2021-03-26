@@ -10,6 +10,7 @@ use crate::{
 };
 
 use async_std::sync::Arc;
+use log::debug;
 use tide::{
     http::{mime, StatusCode},
     Request, Response, Result as TideResult,
@@ -19,6 +20,8 @@ use yarte::Template;
 /// `GET /`
 /// Index
 pub async fn index(mut request: Request<Arc<State>>) -> TideResult {
+    debug!("Rendering /");
+
     let state = request.state().clone();
     let session = request.session_mut();
 
@@ -27,6 +30,13 @@ pub async fn index(mut request: Request<Arc<State>>) -> TideResult {
     let common = Common::new(&state, session, vec![])?;
     Ok(Response::builder(StatusCode::Ok)
         .content_type(mime::HTML)
-        .body(template::Index { info, common, pictures_count }.call()?)
+        .body(
+            template::Index {
+                info,
+                common,
+                pictures_count,
+            }
+            .call()?,
+        )
         .build())
 }

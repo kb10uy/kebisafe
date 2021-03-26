@@ -14,6 +14,7 @@ use async_std::{sync::Arc, task::spawn};
 use std::io::{prelude::*, Cursor};
 
 use image::ImageFormat;
+use log::debug;
 use multipart::server::Multipart;
 use tide::{
     http::{mime, StatusCode},
@@ -24,9 +25,11 @@ use yarte::Template;
 
 const MEDIA_LIST_COUNT: usize = 50;
 
-/// `GET /m`
+/// `GET /m/`
 /// Shows a media.
 pub async fn list_media(mut request: Request<Arc<State>>) -> TideResult {
+    debug!("Rendering /m/");
+
     let state = request.state().clone();
     let session = request.session_mut();
 
@@ -42,6 +45,8 @@ pub async fn list_media(mut request: Request<Arc<State>>) -> TideResult {
 /// `GET /m/:hash_id`
 /// Shows a media.
 pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
+    debug!("Rendering /m/:id");
+
     let state = request.state().clone();
     let hash_id = request.param("hash_id").expect("hash_id must be set").to_string();
     let session = request.session_mut();
@@ -75,6 +80,7 @@ pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
 /// POST `/upload`
 /// Uploads a file.
 pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
+    debug!("Performing /upload");
     ensure_login!(request);
 
     let content_type = request.content_type().unwrap();

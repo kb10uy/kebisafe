@@ -10,6 +10,7 @@ use async_std::sync::Arc;
 
 use anyhow::format_err;
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
+use log::debug;
 use serde::Deserialize;
 use tide::{
     http::{mime, StatusCode},
@@ -20,6 +21,8 @@ use yarte::Template;
 /// `GET /signin`
 /// Renders sign in page.
 pub async fn render_signin(mut request: Request<Arc<State>>) -> TideResult {
+    debug!("Rendering /signin");
+
     let state = request.state().clone();
     let session = request.session_mut();
 
@@ -34,6 +37,8 @@ pub async fn render_signin(mut request: Request<Arc<State>>) -> TideResult {
 /// `POST /signin`
 /// Performs sign in.
 pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
+    debug!("Performing /signin");
+
     #[derive(Debug, Deserialize)]
     struct Parameters {
         _token: String,
@@ -81,6 +86,7 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
 /// `DELETE /signout`
 /// Performs sign out.
 pub async fn signout(mut request: Request<Arc<State>>) -> TideResult {
+    debug!("Performing /signout");
     ensure_login!(request);
 
     let mut flashes = vec![];
