@@ -103,7 +103,7 @@ pub fn verify_csrf_token(cipher: &Aes256GcmSiv, session: &Session, token: &str) 
     // Verify
     let sid = session.id();
     let token_sid = params[0];
-    ensure!(sid == token_sid, "Invalid token");
+    ensure!(sid == token_sid, "Invalid token; expected \"{}\", found \"{}\"", sid, token_sid);
 
     let now = Local::now().timestamp();
     let token_time = params[1].parse().ok().unwrap_or(0);
