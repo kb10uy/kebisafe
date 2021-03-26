@@ -33,9 +33,9 @@ pub async fn fetch_media(pool: &PgPool, hash_id: &str) -> Result<Option<Media>> 
 /// Fetches media list.
 pub async fn fetch_media_list(pool: &PgPool, latest: Option<DateTime<Local>>, limit: usize) -> Result<Vec<Media>> {
     let query_str = if latest.is_some() {
-        "SELECT * FROM media WHERE uploaded < $1 ORDER BY uploaded DESC LIMIT $2;"
+        "SELECT * FROM media WHERE uploaded < $1 AND is_private = FALSE ORDER BY uploaded DESC LIMIT $2;"
     } else {
-        "SELECT * FROM media ORDER BY uploaded DESC LIMIT $2;"
+        "SELECT * FROM media WHERE is_private = FALSE ORDER BY uploaded DESC LIMIT $2;"
     };
     let media = sqlx::query_as(query_str).bind(latest).bind(limit as i64).fetch_all(pool).await?;
 
