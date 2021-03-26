@@ -31,3 +31,19 @@ pub struct Media {
     /// Uploaded date
     pub uploaded: DateTime<Local>,
 }
+
+#[allow(dead_code)]
+impl Media {
+    /// Returns approximate representation of filesize.
+    pub fn filesize_str(&self) -> String {
+        if self.filesize <= 1 {
+            format!("{} byte", self.filesize)
+        } else if self.filesize < 1024 {
+            format!("{} bytes", self.filesize)
+        } else if self.filesize < 1048576 {
+            format!("{:.2} KiB", self.filesize as f64 / 1024.0)
+        } else {
+            format!("{:.2} MiB", self.filesize as f64 / 1048576.0)
+        }
+    }
+}

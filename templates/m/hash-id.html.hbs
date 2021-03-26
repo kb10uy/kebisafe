@@ -24,6 +24,10 @@
                     <td>{{ media.width }} x {{ media.height }}</td>
                 </tr>
                 <tr>
+                    <th>Filesize</th>
+                    <td>{{ media.filesize_str() }}</td>
+                </tr>
+                <tr>
                     <th>Uploaded at</th>
                     <td>{{ media.uploaded.format("%Y/%m/%d %T (%z)").to_string() }}</td>
                 </tr>
