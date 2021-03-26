@@ -3,15 +3,13 @@ const path = require('path');
 const AutoPrefixer = require('autoprefixer');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
-const sourceMapEnabled = process.env['NODE_ENV'] !== 'production';
-
 module.exports = {
     entry: {
         app: ['./assets/scripts/index.ts', './assets/styles/index.scss'],
     },
 
     output: {
-        path: path.resolve(__dirname, 'dist'),
+        path: path.resolve(__dirname, 'public'),
         publicPath: '/',
         filename: '[name].js',
     },
@@ -34,7 +32,7 @@ module.exports = {
                     {
                         loader: 'css-loader',
                         options: {
-                            sourceMap: sourceMapEnabled,
+                            sourceMap: false,
                             importLoaders: 2,
                             url: false,
                         },
@@ -42,7 +40,7 @@ module.exports = {
                     {
                         loader: 'postcss-loader',
                         options: {
-                            sourceMap: sourceMapEnabled,
+                            sourceMap: false,
                             postcssOptions: {
                                 plugins: [AutoPrefixer()],
                             },
@@ -51,7 +49,7 @@ module.exports = {
                     {
                         loader: 'sass-loader',
                         options: {
-                            sourceMap: sourceMapEnabled,
+                            sourceMap: false,
                             implementation: require('sass'),
                             sassOptions: {
                                 outputStyle: 'expanded',
@@ -83,5 +81,5 @@ module.exports = {
         }),
     ],
 
-    devtool: 'source-map',
+    devtool: false,
 };
