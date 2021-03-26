@@ -2,7 +2,7 @@
 
 use crate::{
     action::{
-        database::{fetch_media, fetch_media_list, reserve_media_record},
+        database::{fetch_media, fetch_media_list, remove_media_record, reserve_media_record},
         media::{create_thumbnail, save_image, validate_image_file},
         session::{swap_flashes, Common, Flash},
     },
@@ -10,7 +10,7 @@ use crate::{
     ensure_login, template,
 };
 
-use async_std::{sync::Arc, task::spawn};
+use async_std::{fs, sync::Arc, task::spawn};
 use std::io::{prelude::*, Cursor};
 
 use image::ImageFormat;
@@ -75,6 +75,40 @@ pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
             .call()?,
         )
         .build())
+}
+
+/// DELETE `/m/:hash_id`
+/// Delete a file.
+pub async fn delete(mut request: Request<Arc<State>>) -> TideResult {
+    debug!("Performing DELETE /m/:hash_id");
+    ensure_login!(request);
+
+    let state = request.state().clone();
+    let hash_id = request.param("hash_id").expect("hash_id must be set").to_string();
+    let session = request.session_mut();
+
+    let media_record = match fetch_media(&state.pool, &hash_id).await? {
+        Some(m) => m,
+        None => {
+            let flashes = vec![Flash::Error(format!("Media {} not found", hash_id))];
+            swap_flashes(session, flashes)?;
+            return Ok(Redirect::new("/").into());
+        }
+    };
+
+    let filename = state
+        .media_root
+        .join(format!("{}.{}", media_record.hash_id, media_record.extension));
+    fs::remove_file(&filename).await?;
+    if media_record.has_thumbnail {
+        let thumb_filename = state.media_root.join(format!("thumbnails/{}.jpg", media_record.hash_id));
+        fs::remove_file(&thumb_filename).await?;
+    }
+    remove_media_record(&state.pool, &media_record.hash_id).await?;
+
+    let flashes = vec![Flash::Info(format!("Media has been deleted successfully."))];
+    swap_flashes(session, flashes)?;
+    Ok(Redirect::new("/").into())
 }
 
 /// POST `/upload`

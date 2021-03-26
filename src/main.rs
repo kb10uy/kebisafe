@@ -67,7 +67,7 @@ async fn run_server(envs: Environments) -> Result<()> {
 
     // Media
     routes.at("/m/").get(endpoint::media::list_media);
-    routes.at("/m/:hash_id").get(endpoint::media::media);
+    routes.at("/m/:hash_id").get(endpoint::media::media).delete(endpoint::media::delete);
     routes.at("/upload").post(endpoint::media::upload);
     // Routes -----------------------------------------------------------------
 

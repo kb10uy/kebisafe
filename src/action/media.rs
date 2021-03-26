@@ -1,8 +1,7 @@
 //! Contains media manipulations.
 
-use std::{fs::File as SyncFile, io::BufWriter as SyncBufWriter, path::Path as SyncPath};
-
 use async_std::path::Path;
+use std::{fs::File as SyncFile, io::BufWriter as SyncBufWriter, path::Path as SyncPath};
 
 use anyhow::{bail, Result};
 use image::{gif::GifEncoder, imageops::FilterType, jpeg::JpegEncoder, png::PngEncoder, DynamicImage, GenericImageView, ImageFormat};

@@ -91,6 +91,16 @@ pub async fn reserve_media_record(pool: &PgPool, validated_image: &ValidatedImag
     Err(anyhow!("Failed to create record"))
 }
 
+/// Deletes a record.
+pub async fn remove_media_record(pool: &PgPool, hash_id: &str) -> Result<()> {
+    sqlx::query("DELETE FROM media WHERE hash_id = $1;")
+        .bind(hash_id)
+        .execute(pool)
+        .await?;
+
+    Ok(())
+}
+
 /// Judges whether given `DatabaseError` implies constraint errors.
 fn is_conflicting(sql_err: &dyn DatabaseError) -> bool {
     // On Postgres (and MySQL), SQLSTATE 23___ represents constraint error
