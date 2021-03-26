@@ -4,7 +4,8 @@ Minimal, single-user, and fast image upload service
 ## Requirements
 
 ### Deploy target
-* PostgreSQL (12 or later) or SQLite 3
+* PostgreSQL (12 or later)
+* Redis (5 or later)
 
 ### Build environments
 * Rust 1.51 or later
@@ -13,3 +14,5 @@ Minimal, single-user, and fast image upload service
 ## Usage
 1. `yarn && yarn build`
 2. `cargo build`
+3. `cp .env.example .env` and edit
+4. `cargo run`
