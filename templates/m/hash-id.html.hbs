@@ -5,14 +5,14 @@
 </div>
 
 <div class="row text-center my-2">
-    <span id="imageContainer">
+    <div class="col" id="imageContainer">
         <img src="{{ common.permalink_original(&media) }}" alt="{{ media.hash_id }}" class="img-fluid">
-    </span>
+    </div>
 </div>
 
 <div class="row">
     <h2>Details</h2>
-    <div class="col-sm-12">
+    <div class="col">
         <table class="table">
             <tbody>
                 <tr>
@@ -46,7 +46,7 @@
                 <tr>
                     <th>Additional manipulation</th>
                     <td>
-                        <form action="/media/{{ media.hash_id }}" method="POST">
+                        <form action="/m/{{ media.hash_id }}" method="POST">
                             <input type="hidden" name="_token" value="{{ common.csrf }}">
                             <input type="hidden" name="_method" value="PATCH">
                             <div class="mb-3">
@@ -56,7 +56,7 @@
                             </div>
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input" id="detailPrivate" name="private"
-                                    value="true">
+                                    value="true" {{ if media.is_private { "checked" } else { "" } }}>
                                 <label class="form-check-label" for="detailPrivate">
                                     Make private (hidden from list)
                                 </label>

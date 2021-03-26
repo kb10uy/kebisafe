@@ -95,6 +95,24 @@ pub async fn reserve_media_record(pool: &PgPool, validated_image: &ValidatedImag
     Err(anyhow!("Failed to create record"))
 }
 
+/// Updates media information.
+pub async fn update_media_record(pool: &PgPool, hash_id: &str, private: bool, comment: &str) -> Result<Media> {
+    let new_record = sqlx::query_as(
+        r#"
+        UPDATE media
+        SET is_private = $1, comment = $2
+        WHERE hash_id = $3
+        RETURNING *;
+        "#,
+    )
+    .bind(private)
+    .bind(comment)
+    .bind(hash_id)
+    .fetch_one(pool)
+    .await?;
+    Ok(new_record)
+}
+
 /// Deletes a record.
 pub async fn remove_media_record(pool: &PgPool, hash_id: &str) -> Result<()> {
     sqlx::query("DELETE FROM media WHERE hash_id = $1;")
