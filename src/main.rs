@@ -6,7 +6,7 @@ mod middleware;
 mod template;
 
 use crate::{
-    application::{Arguments, Environments, State, Subcommand},
+    application::{Arguments, Environments, RedisStore, State, Subcommand},
     middleware::{ClientErrorLogMiddleware, FormValidationMiddleware, GracefulShutdownMiddleware},
 };
 
@@ -17,10 +17,7 @@ use argon2::{
 };
 use clap::Clap;
 use rand::prelude::*;
-use tide::{
-    security::CorsMiddleware,
-    sessions::{MemoryStore, SessionMiddleware},
-};
+use tide::{security::CorsMiddleware, sessions::SessionMiddleware};
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -46,7 +43,7 @@ async fn run_server(envs: Environments) -> Result<()> {
     let graceful = GracefulShutdownMiddleware::new();
     app.with(graceful.clone());
     app.with(ClientErrorLogMiddleware);
-    app.with(SessionMiddleware::new(MemoryStore::new(), &secret_key));
+    app.with(SessionMiddleware::new(RedisStore::new(&envs.redis_uri).await?, &secret_key));
     app.with(CorsMiddleware::new());
     app.with(FormValidationMiddleware::new(state.cipher.clone()));
 

@@ -86,6 +86,10 @@ version = "0.3.13"
 version = "0.5.1"
 features = ["runtime-async-std-native-tls", "sqlite", "postgres", "chrono"]
 
+[dependencies.redis]
+version = "0.20.0"
+features = ["async-std-comp"]
+
 # Dependencies - Web
 
 [dependencies.tide]
