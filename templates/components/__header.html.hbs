@@ -1,14 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+{{ let pt = info.page_type() }}
+
+<head prefix="og: http://ogp.me/ns# fb: http://ogp.me/ns/fb# {{ pt }}: http://ogp.me/ns/{{ pt }}#">
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/public/app.css">
     <script defer src="/public/vendor.js"></script>
     <script defer src="/public/app.js"></script>
+
+    <meta property="og:site_name" content="Kebisafe">
+    <meta property="og:title" content="{{ info.title.as_deref().unwrap_or("Kebisafe") }}">
+    <meta property="og:url" content="{{ info.url.to_string() }}">
+    <meta property="og:type" content="{{ pt }}">
+    {{#if let Some(desc) = &info.description }}
+    <meta property="og:description" content="{{ desc }}">
+    {{/if}}
+    {{#if let Some(thumb) = &info.thumbnail }}
+    <meta property="og:image" content="{{ thumb.to_string() }}">
+    {{/if}}
+
+    {{#if let Some(title) = &info.title }}
+    <title>{{ title }} | Kebisafe</title>
+    {{else}}
     <title>Kebisafe</title>
+    {{/if}}
 </head>
+
 <body>
     {{> ./navbar.html.hbs common }}
 

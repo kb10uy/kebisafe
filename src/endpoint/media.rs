@@ -19,6 +19,7 @@ use tide::{
     http::{mime, StatusCode},
     Redirect, Request, Response, Result as TideResult,
 };
+use url::Url;
 use yarte::Template;
 
 const MEDIA_LIST_COUNT: usize = 50;
@@ -29,11 +30,12 @@ pub async fn list_media(mut request: Request<Arc<State>>) -> TideResult {
     let state = request.state().clone();
     let session = request.session_mut();
 
-    let media_list = fetch_media_list(&state.pool, None, MEDIA_LIST_COUNT).await?;
+    let info = template::PageInfo::new(&state, "/m/")?.with_title("Recently uploaded media");
     let common = Common::new(&state, session, vec![])?;
+    let media_list = fetch_media_list(&state.pool, None, MEDIA_LIST_COUNT).await?;
     Ok(Response::builder(StatusCode::Ok)
         .content_type(mime::HTML)
-        .body(template::MediaList { common, media_list }.call()?)
+        .body(template::MediaList { info, common, media_list }.call()?)
         .build())
 }
 
@@ -54,10 +56,14 @@ pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
     };
 
     let common = Common::new(&state, session, vec![])?;
+    let info = template::PageInfo::new(&state, &format!("/m/{}", media_record.hash_id))?
+        .with_title(&media_record.hash_id)
+        .with_thumbnail(&Url::parse(&common.permalink_thumbnail(&media_record))?);
     Ok(Response::builder(StatusCode::Ok)
         .content_type(mime::HTML)
         .body(
             template::Media {
+                info,
                 common,
                 media: media_record,
             }

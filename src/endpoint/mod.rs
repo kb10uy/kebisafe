@@ -23,9 +23,10 @@ pub async fn index(mut request: Request<Arc<State>>) -> TideResult {
     let session = request.session_mut();
 
     let pictures_count = fetch_records_count(&state.pool).await?;
+    let info = template::PageInfo::new(&state, "/")?;
     let common = Common::new(&state, session, vec![])?;
     Ok(Response::builder(StatusCode::Ok)
         .content_type(mime::HTML)
-        .body(template::Index { common, pictures_count }.call()?)
+        .body(template::Index { info, common, pictures_count }.call()?)
         .build())
 }

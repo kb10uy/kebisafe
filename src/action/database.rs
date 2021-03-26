@@ -3,7 +3,7 @@
 use crate::{action::media::ValidatedImage, entity::Media};
 
 use anyhow::{anyhow, Result};
-use chrono::{prelude::*, MAX_DATETIME};
+use chrono::prelude::*;
 use image::GenericImageView;
 use log::info;
 use once_cell::sync::Lazy;

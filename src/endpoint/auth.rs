@@ -3,7 +3,7 @@
 use crate::{
     action::session::{delete_account, set_account, swap_flashes, Account, Common, Flash},
     application::State,
-    template, validate_form,
+    ensure_login, template, validate_form,
 };
 
 use async_std::sync::Arc;
@@ -23,10 +23,11 @@ pub async fn render_signin(mut request: Request<Arc<State>>) -> TideResult {
     let state = request.state().clone();
     let session = request.session_mut();
 
+    let info = template::PageInfo::new(&state, "/signin")?.with_title("Sign in");
     let common = Common::new(&state, session, vec![])?;
     Ok(Response::builder(StatusCode::Ok)
         .content_type(mime::HTML)
-        .body(template::Signin { common }.call()?)
+        .body(template::Signin { info, common }.call()?)
         .build())
 }
 
@@ -80,6 +81,8 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
 /// `DELETE /signout`
 /// Performs sign out.
 pub async fn signout(mut request: Request<Arc<State>>) -> TideResult {
+    ensure_login!(request);
+
     let mut flashes = vec![];
     let session = request.session_mut();
 
