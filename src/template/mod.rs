@@ -74,16 +74,16 @@ pub struct Signin {
 }
 
 #[derive(Debug, Template)]
-#[template(path = "media-list.html.hbs")]
-pub struct MediaList {
+#[template(path = "m/index.html.hbs")]
+pub struct MediaIndex {
     pub info: PageInfo,
     pub common: Common,
     pub media_list: Vec<MediaEntity>,
 }
 
 #[derive(Debug, Template)]
-#[template(path = "media.html.hbs")]
-pub struct Media {
+#[template(path = "m/hash-id.html.hbs")]
+pub struct MediaShow {
     pub info: PageInfo,
     pub common: Common,
     pub media: MediaEntity,

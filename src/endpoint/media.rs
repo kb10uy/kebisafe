@@ -38,7 +38,7 @@ pub async fn list_media(mut request: Request<Arc<State>>) -> TideResult {
     let media_list = fetch_media_list(&state.pool, None, MEDIA_LIST_COUNT).await?;
     Ok(Response::builder(StatusCode::Ok)
         .content_type(mime::HTML)
-        .body(template::MediaList { info, common, media_list }.call()?)
+        .body(template::MediaIndex { info, common, media_list }.call()?)
         .build())
 }
 
@@ -67,7 +67,7 @@ pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
     Ok(Response::builder(StatusCode::Ok)
         .content_type(mime::HTML)
         .body(
-            template::Media {
+            template::MediaShow {
                 info,
                 common,
                 media: media_record,
