@@ -43,6 +43,7 @@
                         </div>
                     </td>
                 </tr>
+                {{#if common.account.is_some() }}
                 <tr>
                     <th>Additional manipulation</th>
                     <td>
@@ -66,7 +67,7 @@
                     </td>
                 </tr>
                 <tr>
-                    <th>Danger zone</th>
+                    <th class="align-middle">Danger zone</th>
                     <td>
                         <form action="/m/{{ media.hash_id }}" method="POST">
                             <input type="hidden" name="_token" value="{{ common.csrf }}">
@@ -75,6 +76,12 @@
                         </form>
                     </td>
                 </tr>
+                {{else}}
+                <tr>
+                    <th>Description</th>
+                    <td>{{ media.comment.as_deref().unwrap_or_default() }}</td>
+                </tr>
+                {{/if}}
             </tbody>
         </table>
     </div>
