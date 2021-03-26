@@ -43,7 +43,7 @@
                         </div>
                     </td>
                 </tr>
-                {{#if common.account.is_some() }}
+                {{#if let Some(_) = &common.account }}
                 <tr>
                     <th>Additional manipulation</th>
                     <td>
