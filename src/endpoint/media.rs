@@ -114,6 +114,11 @@ pub async fn delete(mut request: Request<Arc<State>>) -> TideResult {
 /// POST `/upload`
 /// Uploads a file.
 pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
+    struct Parameters {
+        file: Option<(String, Vec<u8>)>,
+        private: bool,
+    }
+
     debug!("Performing /upload");
     ensure_login!(request);
 
@@ -126,7 +131,10 @@ pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
     let body = request.body_bytes().await?;
     let mut multipart = Multipart::with_body(Cursor::new(&body[..]), boundary);
 
-    let mut file = None;
+    let mut params = Parameters {
+        file: None,
+        private: false,
+    };
     while let Some(mut mpf) = multipart.read_entry()? {
         let field_name = mpf.headers.name.as_ref();
         let filename = mpf.headers.filename;
@@ -134,12 +142,17 @@ pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
             ("upload_file", Some(filename)) => {
                 let mut bytes = vec![];
                 mpf.data.read_to_end(&mut bytes)?;
-                file = Some((bytes, filename));
+                params.file = Some((filename, bytes));
+            }
+            ("private", _) => {
+                let mut value = String::new();
+                mpf.data.read_to_string(&mut value)?;
+                params.private = value.parse().unwrap_or_default();
             }
             _ => (),
         }
     }
-    let (bytes, filename) = match file {
+    let (filename, bytes) = match params.file {
         Some(file) => file,
         None => return Ok(Response::builder(StatusCode::BadRequest).body("Invalid multipart request").build()),
     };
@@ -156,7 +169,7 @@ pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
     };
     let thumbnail = create_thumbnail(&validated_image.image);
 
-    let record = reserve_media_record(&state.pool, &validated_image, thumbnail.is_some()).await?;
+    let record = reserve_media_record(&state.pool, &validated_image, thumbnail.is_some(), params.private).await?;
     let filename = state.media_root.join(format!("{}.{}", record.hash_id, record.extension));
     let thumb_filename = state.media_root.join(format!("thumbnails/{}.jpg", record.hash_id));
     if let Some(thumb) = thumbnail {

@@ -28,15 +28,37 @@
                     <td>{{ media.uploaded.format("%Y/%m/%d %T (%z)").to_string() }}</td>
                 </tr>
                 <tr>
-                    <th>Original media permalink</th>
+                    <th class="align-middle">Original media permalink</th>
                     <td>
-                        <div class="input-group mb-3">
+                        <div class="input-group">
                             <input type="text" class="form-control" placeholder="Original media permalink"
                                 aria-label="Original media permalink" aria-describedby="copyOriginalPermalink"
                                 id="originalPermalink" value="{{ common.permalink_original(&media) }}" readonly>
                             <button class="btn btn-outline-secondary clipboard" type="button" id="copyOriginalPermalink"
                                 data-clipboard-target="#originalPermalink">Copy</button>
                         </div>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Additional manipulation</th>
+                    <td>
+                        <form action="/media/{{ media.hash_id }}" method="POST">
+                            <input type="hidden" name="_token" value="{{ common.csrf }}">
+                            <input type="hidden" name="_method" value="PATCH">
+                            <div class="mb-3">
+                                <label for="detailDescription" class="form-label">Description</label>
+                                <input type="text" class="form-control" id="detailDescription" name="comment" value="{{
+                                    media.comment.as_deref().unwrap_or_default() }}">
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="detailPrivate" name="private"
+                                    value="true">
+                                <label class="form-check-label" for="detailPrivate">
+                                    Make private (hidden from list)
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Apply</button>
+                        </form>
                     </td>
                 </tr>
             </tbody>

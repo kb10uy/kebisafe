@@ -43,7 +43,7 @@ pub async fn fetch_media_list(pool: &PgPool, latest: Option<DateTime<Local>>, li
 }
 
 /// Reserves a database record for media.
-pub async fn reserve_media_record(pool: &PgPool, validated_image: &ValidatedImage, thumbnail: bool) -> Result<Media> {
+pub async fn reserve_media_record(pool: &PgPool, validated_image: &ValidatedImage, thumbnail: bool, private: bool) -> Result<Media> {
     let extension = validated_image
         .format
         .extensions_str()
@@ -64,19 +64,23 @@ pub async fn reserve_media_record(pool: &PgPool, validated_image: &ValidatedImag
                 hash_id,
                 extension,
                 has_thumbnail,
+                is_private,
                 width,
                 height,
+                filesize,
                 uploaded
             ) VALUES (
-                $1, $2, $3, $4, $5, $6
+                $1, $2, $3, $4, $5, $6, $7, $8
             ) RETURNING *;
         "#,
         )
         .bind(hash)
         .bind(extension)
         .bind(thumbnail)
+        .bind(private)
         .bind(width as i32)
         .bind(height as i32)
+        .bind(validated_image.filesize as i32)
         .bind(Local::now())
         .fetch_one(pool)
         .await;

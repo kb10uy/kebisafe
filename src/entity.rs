@@ -13,11 +13,17 @@ pub struct Media {
     /// Whether media has dedicated thumbnail
     pub has_thumbnail: bool,
 
-    /// media width
+    /// Whether media is private
+    pub is_private: bool,
+
+    /// Media width
     pub width: i32,
 
-    /// media height
+    /// Media height
     pub height: i32,
+
+    /// Filesize of media
+    pub filesize: i32,
 
     /// Comment for media
     pub comment: Option<String>,

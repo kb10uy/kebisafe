@@ -20,6 +20,7 @@ const THUMBNAIL_HEIGHT: u32 = 180;
 pub struct ValidatedImage {
     pub image: DynamicImage,
     pub format: ImageFormat,
+    pub filesize: usize,
 }
 
 /// Validates input filename and blob.
@@ -47,7 +48,11 @@ pub fn validate_image_file(filename: impl AsRef<Path>, data: &[u8]) -> Result<Va
     };
     let image = image::load_from_memory_with_format(data, format)?;
 
-    Ok(ValidatedImage { image, format })
+    Ok(ValidatedImage {
+        image,
+        format,
+        filesize: data.len(),
+    })
 }
 
 /// Creates thumbnail image.

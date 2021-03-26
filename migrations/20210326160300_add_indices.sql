@@ -1,1 +1,5 @@
 CREATE INDEX IF NOT EXISTS media_uploaded_index ON media (uploaded);
+
+ALTER TABLE media
+  ADD COLUMN is_private BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN filesize INTEGER NOT NULL DEFAULT 0;
