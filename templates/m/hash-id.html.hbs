@@ -65,6 +65,16 @@
                         </form>
                     </td>
                 </tr>
+                <tr>
+                    <th>Danger zone</th>
+                    <td>
+                        <form action="/m/{{ media.hash_id }}" method="POST">
+                            <input type="hidden" name="_token" value="{{ common.csrf }}">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="submit" class="btn btn-danger">Remove media</button>
+                        </form>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
