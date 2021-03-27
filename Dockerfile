@@ -14,9 +14,10 @@ RUN yarn && yarn build
 # Merge them
 FROM debian:bullseye-slim
 LABEL maintainer="kb10uy"
-COPY --from=builder /usr/local/cargo/bin/kebisafe /usr/local/bin/kebisafe
-COPY --from=bundler /build/public /public
-RUN mkdir /media
+RUN mkdir -p /var/www/kebisafe/media
+COPY --from=builder /usr/local/cargo/bin/kebisafe /var/www/kebisafe/kebisafe
+COPY --from=bundler /build/public /var/www/kebisafe/public
 
-WORKDIR /
-CMD ["kebisafe", "serve"]
+EXPOSE 9375
+WORKDIR /var/www/kebisafe
+CMD ["/var/www/kebisafe/kebisafe", "serve"]
