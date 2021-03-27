@@ -42,54 +42,62 @@ async fn run_server(envs: Environments) -> Result<()> {
     debug!("Started to run server");
 
     let (state, secret_key) = State::new(&envs).await?;
-    // let mut app = tide::new();
     let mut app = tide::with_state(state.clone());
+
+    // Web Routes -------------------------------------------------------------
+    // To enable HTTP method deformation,
+    // we have to split route server and nest it at root.
+    let mut web_routes = tide::with_state(state.clone());
+
+    // Root
+    web_routes.at("/").get(web::endpoint::index);
+
+    // Authentication
+    web_routes
+        .at("/signin")
+        .get(web::endpoint::auth::render_signin)
+        .post(web::endpoint::auth::signin);
+    web_routes.at("/signout").delete(web::endpoint::auth::signout);
+
+    // Media
+    web_routes
+        .at("/m/")
+        .get(web::endpoint::media::list_media)
+        .post(web::endpoint::media::upload);
+    web_routes
+        .at("/m/:hash_id")
+        .get(web::endpoint::media::media)
+        .patch(web::endpoint::media::update)
+        .delete(web::endpoint::media::delete);
+    // Web Routes -------------------------------------------------------------
+
+    // API Routes -------------------------------------------------------------
+    let mut api_routes = tide::with_state(state.clone());
+
+    api_routes.at("/show");
+    // API Routes -------------------------------------------------------------
 
     // Middlewares
     let graceful_shutdown = GracefulShutdownMiddleware::new();
-    let inner_error = After(log_inner_error);
-    let cors = CorsMiddleware::new();
-    let session = {
+    app.with(graceful_shutdown.clone());
+    app.with(After(log_inner_error));
+    app.with({
         let store = RedisStore::new(&envs.redis_uri).await?;
         let middleware = SessionMiddleware::new(store, &secret_key)
             .with_session_ttl(Some(Duration::from_secs(7200)))
             .with_same_site_policy(SameSite::Lax);
         middleware
-    };
-    let form_validation = FormValidationMiddleware::new(state.cipher.clone());
+    });
+    app.with(FormValidationMiddleware::new(state.cipher.clone()));
+    app.with(CorsMiddleware::new());
 
-    app.with(graceful_shutdown.clone());
-    app.with(cors);
-    app.with(inner_error);
-    app.with(session);
-    app.with(form_validation);
+    // Routes
+    app.at("/").nest(web_routes);
+    app.at("/api").nest(api_routes);
+    app.at("/public").reset_middleware().serve_dir(&envs.public_dir)?;
+    app.at("/media").reset_middleware().serve_dir(&envs.media_dir)?;
 
-    // Routes -----------------------------------------------------------------
-    // To enable HTTP method deformation,
-    // we have to split route server and nest it at root.
-    let mut routes = tide::with_state(state);
-
-    // Root
-    routes.at("/").get(web::endpoint::index);
-    routes.at("/public").serve_dir(&envs.public_dir)?;
-    routes.at("/media").serve_dir(&envs.media_dir)?;
-
-    // Authentication
-    routes.at("/signin").get(web::endpoint::auth::render_signin);
-    routes.at("/signin").post(web::endpoint::auth::signin);
-    routes.at("/signout").delete(web::endpoint::auth::signout);
-
-    // Media
-    routes.at("/m/").get(web::endpoint::media::list_media);
-    routes
-        .at("/m/:hash_id")
-        .get(web::endpoint::media::media)
-        .patch(web::endpoint::media::update)
-        .delete(web::endpoint::media::delete);
-    routes.at("/upload").post(web::endpoint::media::upload);
-    // Routes -----------------------------------------------------------------
-
-    app.at("/").nest(routes);
+    // Start server
     app.listen(envs.listen_at).await?;
     graceful_shutdown.terminate().await;
     Ok(())

@@ -13,7 +13,7 @@
 {{#if let Some(_) = &common.account }}
 <div class="row">
     <div class="col">
-        <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+        <form id="uploadForm" action="/m/" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="_token" value="{{ common.csrf }}">
             <div class="mb-3">
                 <label for="upload_file" class="form-label">Upload file (JPEG, PNG, GIF)</label>
