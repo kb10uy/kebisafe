@@ -18,6 +18,6 @@ RUN mkdir -p /var/www/kebisafe/media
 COPY --from=builder /usr/local/cargo/bin/kebisafe /var/www/kebisafe/kebisafe
 COPY --from=bundler /build/public /var/www/kebisafe/public
 
-EXPOSE 9375
+EXPOSE 9357
 WORKDIR /var/www/kebisafe
 CMD ["/var/www/kebisafe/kebisafe", "serve"]
