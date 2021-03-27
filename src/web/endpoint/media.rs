@@ -64,7 +64,7 @@ pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
 
     let common = Common::new(&state, session, vec![])?;
     let info = template::PageInfo::new(&state, &format!("/m/{}", media_record.hash_id))?
-        .with_title(&format!("Kebisafe #{}", media_record.hash_id))
+        .with_title(&format!("Media #{}", media_record.hash_id))
         .with_description(media_record.comment.as_deref().unwrap_or("<No comment>"))
         .with_thumbnail(&Url::parse(&common.permalink_thumbnail(&media_record))?);
     Ok(Response::builder(StatusCode::Ok)
