@@ -1,5 +1,4 @@
 /.git*
-/assets
 /media
 /migrations
 /node_modules
