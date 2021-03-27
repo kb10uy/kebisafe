@@ -14,5 +14,5 @@ trim_trailing_whitespace = false
 [*.sql]
 indent_size = 2
 
-[package.json]
+[*.{toml,yml,json}]
 indent_size = 2
