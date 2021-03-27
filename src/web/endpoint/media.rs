@@ -7,7 +7,8 @@ use crate::{
         session::{swap_flashes, Common, Flash},
     },
     application::State,
-    ensure_login, template, validate_form,
+    ensure_login, validate_form,
+    web::template,
 };
 
 use async_std::{fs, sync::Arc, task::spawn};

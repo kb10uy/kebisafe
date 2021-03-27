@@ -1,26 +1,17 @@
 //! Contains application common types.
 
-use async_std::{
-    path::PathBuf,
-    sync::{Arc, Mutex},
-};
-use std::{
-    convert::TryFrom,
-    fmt::{Debug, Formatter, Result as FmtResult},
-};
+use async_std::{path::PathBuf, sync::Arc};
+use std::convert::TryFrom;
 
 use aes_gcm_siv::{
     aead::{generic_array::GenericArray, NewAead},
     Aes256GcmSiv,
 };
 use anyhow::Result;
-use async_trait::async_trait;
 use clap::Clap;
 use data_encoding::HEXLOWER_PERMISSIVE;
-use redis::{aio::Connection as RedisConnection, AsyncCommands, Client as RedisClient};
 use serde::Deserialize;
 use sqlx::PgPool;
-use tide::sessions::{Session, SessionStore};
 use url::Url;
 
 /// Captured environment variables.
@@ -93,89 +84,5 @@ impl State {
             }),
             secret_key,
         ))
-    }
-}
-
-/// Redis backend for session store.
-#[derive(Clone)]
-pub struct RedisStore {
-    client: RedisClient,
-
-    // TODO: Multiplex connection
-    connection: Arc<Mutex<RedisConnection>>,
-
-    id_header: String,
-}
-
-impl Debug for RedisStore {
-    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
-        write!(f, "RedisStore {{ internal hidden }}")
-    }
-}
-
-impl RedisStore {
-    /// Connects to the Redis and creates a store.
-    pub async fn new(uri: &str) -> Result<RedisStore> {
-        let client = RedisClient::open(uri)?;
-        let connection = Arc::new(Mutex::new(client.get_async_std_connection().await?));
-        let id_header = "kebisafe.session:".into();
-
-        Ok(RedisStore {
-            client,
-            connection,
-            id_header,
-        })
-    }
-}
-
-#[async_trait]
-impl SessionStore for RedisStore {
-    async fn load_session(&self, cookie_value: String) -> Result<Option<Session>> {
-        let mut conn = self.connection.lock().await;
-        let mut key = self.id_header.clone();
-        key.push_str(&Session::id_from_cookie_value(&cookie_value)?);
-
-        let session_json: Option<String> = conn.get(&key).await?;
-        match session_json {
-            Some(json) => Ok(Some(serde_json::from_str(&json)?)),
-            None => Ok(None),
-        }
-    }
-
-    async fn store_session(&self, session: Session) -> Result<Option<String>> {
-        let mut conn = self.connection.lock().await;
-        let mut key = self.id_header.clone();
-        key.push_str(session.id());
-
-        let session_json = serde_json::to_string(&session)?;
-        match session.expires_in() {
-            Some(duration) => conn.set_ex(&key, &session_json, duration.as_secs() as usize).await?,
-            None => conn.set(&key, &session_json).await?,
-        }
-
-        session.reset_data_changed();
-        Ok(session.into_cookie_value())
-    }
-
-    async fn destroy_session(&self, session: Session) -> Result<()> {
-        let mut conn = self.connection.lock().await;
-        let mut key = self.id_header.clone();
-        key.push_str(session.id());
-
-        conn.del(&key).await?;
-        Ok(())
-    }
-
-    async fn clear_store(&self) -> Result<()> {
-        let mut conn_iter = self.client.get_async_std_connection().await?;
-        let mut conn = self.connection.lock().await;
-        let mut key_pattern = self.id_header.clone();
-        key_pattern.push('*');
-
-        let mut keys = conn_iter.scan_match::<_, String>(&key_pattern).await?;
-        while let Some(key) = keys.next_item().await {
-            conn.del(&key).await?;
-        }
-        Ok(())
     }
 }

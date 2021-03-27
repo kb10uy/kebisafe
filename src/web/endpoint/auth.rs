@@ -3,7 +3,8 @@
 use crate::{
     action::session::{delete_account, set_account, swap_flashes, Account, Common, Flash},
     application::State,
-    ensure_login, template, validate_form,
+    ensure_login, validate_form,
+    web::template,
 };
 
 use async_std::sync::Arc;

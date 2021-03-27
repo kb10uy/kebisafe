@@ -6,7 +6,7 @@ pub(crate) mod media;
 use crate::{
     action::{database::fetch_records_count, session::Common},
     application::State,
-    template,
+    web::template,
 };
 
 use async_std::sync::Arc;
