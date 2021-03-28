@@ -26,6 +26,7 @@ pub struct Environments {
     pub media_dir: String,
     pub account_name: String,
     pub account_password: String,
+    pub api_token: String,
 }
 
 /// Commandline arguments.

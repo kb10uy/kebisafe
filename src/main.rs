@@ -6,6 +6,7 @@ mod middleware;
 mod web;
 
 use crate::{
+    api::ApiAuthorizationMiddleware,
     application::{Arguments, Environments, State, Subcommand},
     middleware::{log_inner_error, GracefulShutdownMiddleware},
     web::{session::RedisStore, FormValidationMiddleware},
@@ -78,8 +79,10 @@ async fn run_server(envs: Environments) -> Result<()> {
 
     // API Routes -------------------------------------------------------------
     let mut api_routes = tide::with_state(state.clone());
+    api_routes.with(ApiAuthorizationMiddleware::new(&envs.api_token));
 
-    api_routes.at("/show");
+    api_routes.at("/show").get(api::endpoint::show);
+    api_routes.at("/upload").post(api::endpoint::upload);
 
     // Root App --------------------------------------------------------------
     let mut app = tide::new();

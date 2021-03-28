@@ -1,0 +1,17 @@
+{
+  "Version": "13.4.0",
+  "Name": "Kebisafe",
+  "DestinationType": "ImageUploader",
+  "RequestMethod": "POST",
+  "RequestURL": "http://example.com/api/upload",
+  "Parameters": {
+    "filename": "$filename$",
+    "private": "false"
+  },
+  "Headers": {
+    "Authorization": "Bearer <Your API token here>"
+  },
+  "Body": "Binary",
+  "URL": "$json:permalink$",
+  "ErrorMessage": "$json:message$"
+}
