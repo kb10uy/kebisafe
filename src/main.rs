@@ -22,7 +22,7 @@ use argon2::{
 use clap::Clap;
 use log::debug;
 use rand::prelude::*;
-use tide::{security::CorsMiddleware, sessions::SessionMiddleware, utils::After};
+use tide::{http::cookies::SameSite, security::CorsMiddleware, sessions::SessionMiddleware, utils::After};
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -51,7 +51,9 @@ async fn run_server(envs: Environments) -> Result<()> {
     let mut web_routes = tide::with_state(state.clone());
     web_routes.with({
         let store = RedisStore::new(&envs.redis_uri).await?;
-        let middleware = SessionMiddleware::new(store, &secret_key).with_session_ttl(Some(Duration::from_secs(7200)));
+        let middleware = SessionMiddleware::new(store, &secret_key)
+            .with_session_ttl(Some(Duration::from_secs(86400 * 7)))
+            .with_same_site_policy(SameSite::Lax);
         middleware
     });
     web_routes.with(FormValidationMiddleware::new(state.cipher.clone()));
