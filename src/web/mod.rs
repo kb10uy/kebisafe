@@ -5,13 +5,18 @@ pub(crate) mod multipart;
 pub(crate) mod session;
 pub(crate) mod template;
 
-use crate::{action::session::verify_csrf_token, web::multipart::parse_multipart};
+use crate::{
+    action::session::verify_csrf_token,
+    web::multipart::{parse_multipart, MultipartData},
+};
+
+use std::collections::HashMap;
 
 use aes_gcm_siv::Aes256GcmSiv;
 use anyhow::format_err;
 use async_trait::async_trait;
 use log::{info, warn};
-use serde::Deserialize;
+use serde_json::Value as JsonValue;
 
 use tide::{
     http::{mime, Method, Request as HttpRequest, StatusCode},
@@ -63,69 +68,137 @@ macro_rules! validate_form {
     }};
 }
 
+struct ParsedForm(JsonValue);
+struct ParsedMultipart(HashMap<String, MultipartData>);
+
+/// Extends Request to cache form requests.
+#[async_trait]
+pub trait RequestPreParseExt {
+    fn set_form(&mut self, form: JsonValue);
+    fn set_multipart(&mut self, multipart: HashMap<String, MultipartData>);
+    fn form_cache(&self) -> Option<&JsonValue>;
+    fn multipart_cache(&self) -> Option<&HashMap<String, MultipartData>>;
+
+    fn body_parsed_form(&self) -> &JsonValue {
+        self.form_cache().expect("Form cache must be set")
+    }
+
+    fn body_parsed_multipart(&self) -> &HashMap<String, MultipartData> {
+        self.multipart_cache().expect("Multipart cache must be set")
+    }
+}
+
+impl<State: 'static + Send + Sync + Clone> RequestPreParseExt for Request<State> {
+    fn set_form(&mut self, form: JsonValue) {
+        self.set_ext(ParsedForm(form));
+    }
+
+    fn set_multipart(&mut self, multipart: HashMap<String, MultipartData>) {
+        self.set_ext(ParsedMultipart(multipart));
+    }
+
+    fn form_cache(&self) -> Option<&JsonValue> {
+        self.ext::<ParsedForm>().map(|m| &m.0)
+    }
+
+    fn multipart_cache(&self) -> Option<&HashMap<String, MultipartData>> {
+        self.ext::<ParsedMultipart>().map(|m| &m.0)
+    }
+}
+
+pub struct FormPreparseMiddleware;
+
+#[async_trait]
+impl<State: 'static + Send + Sync + Clone> Middleware<State> for FormPreparseMiddleware {
+    async fn handle(&self, mut request: Request<State>, next: Next<'_, State>) -> TideResult {
+        let content_type = match request.content_type() {
+            Some(mime) if mime.essence() == mime::FORM.essence() => mime,
+            Some(mime) if mime.essence() == mime::MULTIPART_FORM.essence() => mime,
+            _ => return Ok(next.run(request).await),
+        };
+
+        let body_bytes = request.body_bytes().await?;
+        if content_type.essence() == mime::FORM.essence() {
+            let form_data: JsonValue = serde_json::from_slice(&body_bytes)?;
+            request.set_form(form_data);
+        } else {
+            let boundary = content_type
+                .param("boundary")
+                .ok_or_else(|| format_err!("Invalid multipart request"))?
+                .as_str();
+            let multipart_data = parse_multipart(boundary, &body_bytes)?;
+            request.set_multipart(multipart_data);
+        }
+
+        request.set_body(body_bytes);
+        Ok(next.run(request).await)
+    }
+}
+
+/// Deforms HTTP method based on its _method value.
+pub async fn deform_http_method<State: 'static + Send + Sync + Clone>(mut request: Request<State>) -> Request<State> {
+    if request.method() != Method::Post {
+        return request;
+    }
+
+    let method = match request.content_type() {
+        Some(mime) if mime.essence() == mime::FORM.essence() => {
+            let value = request.body_parsed_form();
+            value["_method"].as_str().and_then(|m| m.parse().ok())
+        }
+        Some(mime) if mime.essence() == mime::MULTIPART_FORM.essence() => {
+            let value = request.body_parsed_multipart();
+            value.get("_method").and_then(|v| v.as_str()).and_then(|m| m.parse().ok())
+        }
+        _ => return request,
+    };
+
+    if let Some(method) = method {
+        let http_request: &mut HttpRequest = request.as_mut();
+        http_request.set_method(method);
+        info!("HTTP method set to {}", method)
+    }
+
+    request
+}
+
 /// Performs some actions for form data:
 /// * Validate CSRF token of `_token`
 /// * Deform HTTP method with `_method`
-pub struct FormValidationMiddleware {
+pub struct CsrfProtectionMiddleware {
     cipher: Aes256GcmSiv,
 }
 
-impl FormValidationMiddleware {
-    pub fn new(cipher: Aes256GcmSiv) -> FormValidationMiddleware {
-        FormValidationMiddleware { cipher }
+impl CsrfProtectionMiddleware {
+    pub fn new(cipher: Aes256GcmSiv) -> CsrfProtectionMiddleware {
+        CsrfProtectionMiddleware { cipher }
     }
 }
 
 #[async_trait]
-impl<State: 'static + Send + Sync + Clone> Middleware<State> for FormValidationMiddleware {
-    async fn handle(&self, mut request: Request<State>, next: Next<'_, State>) -> TideResult {
-        #[derive(Debug, Default, Deserialize)]
-        struct FormData {
-            #[serde(rename = "_token")]
-            token: Option<String>,
-
-            #[serde(rename = "_method")]
-            method: Option<String>,
-        }
-
+impl<State: 'static + Send + Sync + Clone> Middleware<State> for CsrfProtectionMiddleware {
+    async fn handle(&self, request: Request<State>, next: Next<'_, State>) -> TideResult {
         if ALLOWED_METHODS.contains(&request.method()) {
             let response = next.run(request).await;
             return Ok(response);
         }
 
         info!("Attempting CSRF protection");
-        let body_bytes = request.body_bytes().await?;
-        let form_data = match request.content_type() {
-            Some(m) if m.essence() == mime::FORM.essence() => serde_urlencoded::from_bytes(&body_bytes)?,
-            Some(m) if m.essence() == mime::MULTIPART_FORM.essence() => {
-                let boundary = m
-                    .param("boundary")
-                    .ok_or_else(|| format_err!("Invalid multipart request"))?
-                    .as_str();
-                let multipart_data = parse_multipart(boundary, &body_bytes)?;
-
-                FormData {
-                    token: multipart_data.get("_token").and_then(|d| d.as_str()).map(|s| s.to_string()),
-                    method: multipart_data.get("_method").and_then(|d| d.as_str()).map(|s| s.to_string()),
-                }
+        let token = match request.content_type() {
+            Some(mime) if mime.essence() == mime::FORM.essence() => {
+                let value = request.body_parsed_form();
+                value["_method"].as_str()
             }
-            m => {
-                warn!("Unsupported Content-Type: {:?}", m);
-                return Ok(Response::builder(StatusCode::BadRequest).build());
+            Some(mime) if mime.essence() == mime::MULTIPART_FORM.essence() => {
+                let value = request.body_parsed_multipart();
+                value.get("_method").and_then(|v| v.as_str())
             }
+            _ => return Ok(next.run(request).await),
         };
-
-        // HTTP method deformation
-        if let Some(method_str) = form_data.method {
-            let method = method_str.parse()?;
-            let inner_request: &mut HttpRequest = request.as_mut();
-            inner_request.set_method(method);
-            info!("Request method set to {}", method);
-        }
 
         // CSRF token validation
         if !ALLOWED_METHODS.contains(&request.method()) {
-            match form_data.token {
+            match token {
                 Some(token) => match verify_csrf_token(&self.cipher, request.session(), &token) {
                     Ok(()) => info!("CSRF protection succeeded"),
                     Err(e) => {
@@ -140,10 +213,6 @@ impl<State: 'static + Send + Sync + Clone> Middleware<State> for FormValidationM
             }
         }
 
-        request.set_body(body_bytes);
-        // let session = request.session().clone();
-        let response = next.run(request).await;
-        // warn!("{:?}", session);
-        Ok(response)
+        Ok(next.run(request).await)
     }
 }

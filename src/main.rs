@@ -9,7 +9,7 @@ use crate::{
     api::ApiAuthorizationMiddleware,
     application::{Arguments, Environments, State, Subcommand},
     middleware::{log_inner_error, GracefulShutdownMiddleware},
-    web::{session::RedisStore, FormValidationMiddleware},
+    web::{deform_http_method, session::RedisStore, FormPreparseMiddleware, CsrfProtectionMiddleware},
 };
 
 use std::time::Duration;
@@ -22,7 +22,12 @@ use argon2::{
 use clap::Clap;
 use log::debug;
 use rand::prelude::*;
-use tide::{http::cookies::SameSite, security::CorsMiddleware, sessions::SessionMiddleware, utils::After};
+use tide::{
+    http::cookies::SameSite,
+    security::CorsMiddleware,
+    sessions::SessionMiddleware,
+    utils::{After, Before},
+};
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -56,7 +61,7 @@ async fn run_server(envs: Environments) -> Result<()> {
             .with_same_site_policy(SameSite::Lax);
         middleware
     });
-    web_routes.with(FormValidationMiddleware::new(state.cipher.clone()));
+    web_routes.with(CsrfProtectionMiddleware::new(state.cipher.clone()));
 
     // Root
     web_routes.at("/").get(web::endpoint::index);
@@ -94,6 +99,8 @@ async fn run_server(envs: Environments) -> Result<()> {
     app.with(graceful_shutdown.clone());
     app.with(After(log_inner_error));
     app.with(CorsMiddleware::new());
+    app.with(FormPreparseMiddleware);
+    app.with(Before(deform_http_method));
 
     // Routes
     app.at("/").nest(web_routes);
