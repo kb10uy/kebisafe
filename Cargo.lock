@@ -1621,7 +1621,7 @@ dependencies = [
 
 [[package]]
 name = "kebisafe"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "aes-gcm-siv",
  "anyhow",
