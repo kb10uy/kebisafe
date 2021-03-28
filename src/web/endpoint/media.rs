@@ -8,15 +8,13 @@ use crate::{
     },
     application::State,
     ensure_login, validate_form,
-    web::template,
+    web::{template, RequestPreParseExt, multipart::MultipartData},
 };
 
 use async_std::{fs, sync::Arc, task::spawn};
-use std::io::{prelude::*, Cursor};
 
 use image::ImageFormat;
 use log::debug;
-use multipart::server::Multipart;
 use serde::Deserialize;
 use tide::{
     http::{mime, StatusCode},
@@ -78,6 +76,54 @@ pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
             .call()?,
         )
         .build())
+}
+
+/// POST `/upload`
+/// Uploads a file.
+pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
+    struct Parameters {
+        file: Option<(String, Vec<u8>)>,
+        private: bool,
+    }
+
+    debug!("Performing /upload");
+    ensure_login!(request);
+
+    let mut multipart = request.body_parsed_multipart();
+    let private: bool = multipart.get("private").and_then(|v| v.as_str()).and_then(|v| v.parse().ok()).unwrap_or_default();
+    let (filename, bytes) = match multipart.get("filename") {
+        Some(MultipartData::File(filename, bytes)) => (filename, bytes),
+        _ => return Ok(Response::builder(StatusCode::BadRequest).body("Invalid multipart request").build()),
+    };
+
+    let state = request.state().clone();
+    let session = request.session_mut();
+    let validated_image = match validate_image_file(filename, bytes) {
+        Ok(image) => image,
+        Err(e) => {
+            let flashes = vec![Flash::Error(format!("Failed to validate image: {}", e))];
+            swap_flashes(session, flashes)?;
+            return Ok(Redirect::new("/").into());
+        }
+    };
+    let thumbnail = create_thumbnail(&validated_image.image);
+
+    let record = reserve_media_record(&state.pool, &validated_image, thumbnail.is_some(), params.private).await?;
+    let filename = state.media_root.join(format!("{}.{}", record.hash_id, record.extension));
+    let thumb_filename = state.media_root.join(format!("thumbnails/{}.jpg", record.hash_id));
+    if let Some(thumb) = thumbnail {
+        spawn(async move { save_image(&thumb, ImageFormat::Jpeg, &thumb_filename) }).await?;
+        spawn(async move { save_image(&validated_image.image, validated_image.format, &filename) }).await?;
+    } else {
+        spawn(async move { save_image(&validated_image.image, validated_image.format, &filename) }).await?;
+    }
+
+    let flashes = vec![Flash::Info(format!(
+        "Media has been uploaded successfully! ID is {}",
+        record.hash_id
+    ))];
+    swap_flashes(session, flashes)?;
+    Ok(Redirect::new(format!("/m/{}", record.hash_id)).into())
 }
 
 /// PATCH `/m/:hash_id`
@@ -150,80 +196,4 @@ pub async fn delete(mut request: Request<Arc<State>>) -> TideResult {
     let flashes = vec![Flash::Info(format!("Media has been deleted successfully."))];
     swap_flashes(session, flashes)?;
     Ok(Redirect::new("/").into())
-}
-
-/// POST `/upload`
-/// Uploads a file.
-pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
-    struct Parameters {
-        file: Option<(String, Vec<u8>)>,
-        private: bool,
-    }
-
-    debug!("Performing /upload");
-    ensure_login!(request);
-
-    let content_type = request.content_type().unwrap();
-    let boundary = match content_type.param("boundary") {
-        Some(b) if content_type.essence() == mime::MULTIPART_FORM.essence() => b.as_str(),
-        _ => return Ok(Response::builder(StatusCode::BadRequest).body("Invalid multipart request").build()),
-    };
-
-    let body = request.body_bytes().await?;
-    let mut multipart = Multipart::with_body(Cursor::new(&body[..]), boundary);
-
-    let mut params = Parameters {
-        file: None,
-        private: false,
-    };
-    while let Some(mut mpf) = multipart.read_entry()? {
-        let field_name = mpf.headers.name.as_ref();
-        let filename = mpf.headers.filename;
-        match (field_name, filename) {
-            ("upload_file", Some(filename)) => {
-                let mut bytes = vec![];
-                mpf.data.read_to_end(&mut bytes)?;
-                params.file = Some((filename, bytes));
-            }
-            ("private", _) => {
-                let mut value = String::new();
-                mpf.data.read_to_string(&mut value)?;
-                params.private = value.parse().unwrap_or_default();
-            }
-            _ => (),
-        }
-    }
-    let (filename, bytes) = match params.file {
-        Some(file) => file,
-        None => return Ok(Response::builder(StatusCode::BadRequest).body("Invalid multipart request").build()),
-    };
-
-    let state = request.state().clone();
-    let session = request.session_mut();
-    let validated_image = match validate_image_file(&filename, &bytes) {
-        Ok(image) => image,
-        Err(e) => {
-            let flashes = vec![Flash::Error(format!("Failed to validate image: {}", e))];
-            swap_flashes(session, flashes)?;
-            return Ok(Redirect::new("/").into());
-        }
-    };
-    let thumbnail = create_thumbnail(&validated_image.image);
-
-    let record = reserve_media_record(&state.pool, &validated_image, thumbnail.is_some(), params.private).await?;
-    let filename = state.media_root.join(format!("{}.{}", record.hash_id, record.extension));
-    let thumb_filename = state.media_root.join(format!("thumbnails/{}.jpg", record.hash_id));
-    if let Some(thumb) = thumbnail {
-        spawn(async move { save_image(&thumb, ImageFormat::Jpeg, &thumb_filename) }).await?;
-        spawn(async move { save_image(&validated_image.image, validated_image.format, &filename) }).await?;
-    } else {
-        spawn(async move { save_image(&validated_image.image, validated_image.format, &filename) }).await?;
-    }
-
-    let flashes = vec![Flash::Info(format!(
-        "Media has been uploaded successfully! ID is {}",
-        record.hash_id
-    ))];
-    swap_flashes(session, flashes)?;
-    Ok(Redirect::new(format!("/m/{}", record.hash_id)).into())
 }
