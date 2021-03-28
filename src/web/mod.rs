@@ -52,9 +52,12 @@ macro_rules! ensure_login {
 macro_rules! validate_form {
     ($t:ty, $req:expr, $floc:expr) => {{
         use tide::Redirect;
-        use $crate::action::session::{swap_flashes, Flash};
+        use $crate::{
+            action::session::{swap_flashes, Flash},
+            web::RequestPreParseExt,
+        };
 
-        let form_data: Result<$t, _> = $req.body_form().await;
+        let form_data: Result<$t, _> = serde_json::from_value($req.body_parsed_form().clone());
         match form_data {
             Ok(data) => data,
             Err(e) => {
@@ -119,7 +122,7 @@ impl<State: 'static + Send + Sync + Clone> Middleware<State> for FormPreparseMid
 
         let body_bytes = request.body_bytes().await?;
         if content_type.essence() == mime::FORM.essence() {
-            let form_data: JsonValue = serde_json::from_slice(&body_bytes)?;
+            let form_data: JsonValue = serde_urlencoded::from_bytes(&body_bytes)?;
             request.set_form(form_data);
         } else {
             let boundary = content_type
@@ -187,11 +190,11 @@ impl<State: 'static + Send + Sync + Clone> Middleware<State> for CsrfProtectionM
         let token = match request.content_type() {
             Some(mime) if mime.essence() == mime::FORM.essence() => {
                 let value = request.body_parsed_form();
-                value["_method"].as_str()
+                value["_token"].as_str()
             }
             Some(mime) if mime.essence() == mime::MULTIPART_FORM.essence() => {
                 let value = request.body_parsed_multipart();
-                value.get("_method").and_then(|v| v.as_str())
+                value.get("_token").and_then(|v| v.as_str())
             }
             _ => return Ok(next.run(request).await),
         };

@@ -8,7 +8,7 @@ use crate::{
     },
     application::State,
     ensure_login, validate_form,
-    web::{template, RequestPreParseExt, multipart::MultipartData},
+    web::{multipart::MultipartData, template, RequestPreParseExt},
 };
 
 use async_std::{fs, sync::Arc, task::spawn};
@@ -81,26 +81,26 @@ pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
 /// POST `/upload`
 /// Uploads a file.
 pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
-    struct Parameters {
-        file: Option<(String, Vec<u8>)>,
-        private: bool,
-    }
-
     debug!("Performing /upload");
     ensure_login!(request);
 
-    let mut multipart = request.body_parsed_multipart();
-    let private: bool = multipart.get("private").and_then(|v| v.as_str()).and_then(|v| v.parse().ok()).unwrap_or_default();
-    let (filename, bytes) = match multipart.get("filename") {
+    let multipart = request.body_parsed_multipart();
+    let private: bool = multipart
+        .get("private")
+        .and_then(|v| v.as_str())
+        .and_then(|v| v.parse().ok())
+        .unwrap_or_default();
+    let (filename, bytes) = match multipart.get("upload_file") {
         Some(MultipartData::File(filename, bytes)) => (filename, bytes),
         _ => return Ok(Response::builder(StatusCode::BadRequest).body("Invalid multipart request").build()),
     };
 
     let state = request.state().clone();
-    let session = request.session_mut();
+
     let validated_image = match validate_image_file(filename, bytes) {
         Ok(image) => image,
         Err(e) => {
+            let session = request.session_mut();
             let flashes = vec![Flash::Error(format!("Failed to validate image: {}", e))];
             swap_flashes(session, flashes)?;
             return Ok(Redirect::new("/").into());
@@ -108,7 +108,7 @@ pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
     };
     let thumbnail = create_thumbnail(&validated_image.image);
 
-    let record = reserve_media_record(&state.pool, &validated_image, thumbnail.is_some(), params.private).await?;
+    let record = reserve_media_record(&state.pool, &validated_image, thumbnail.is_some(), private).await?;
     let filename = state.media_root.join(format!("{}.{}", record.hash_id, record.extension));
     let thumb_filename = state.media_root.join(format!("thumbnails/{}.jpg", record.hash_id));
     if let Some(thumb) = thumbnail {
@@ -118,6 +118,7 @@ pub async fn upload(mut request: Request<Arc<State>>) -> TideResult {
         spawn(async move { save_image(&validated_image.image, validated_image.format, &filename) }).await?;
     }
 
+    let session = request.session_mut();
     let flashes = vec![Flash::Info(format!(
         "Media has been uploaded successfully! ID is {}",
         record.hash_id
