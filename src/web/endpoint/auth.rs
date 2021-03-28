@@ -4,7 +4,7 @@ use crate::{
     action::session::{delete_account, set_account, swap_flashes, Account, Common, Flash},
     application::State,
     ensure_login, validate_form,
-    web::template,
+    web::{session::SessionWorkaroundExt, template},
 };
 
 use async_std::sync::Arc;
@@ -79,7 +79,9 @@ pub async fn signin(mut request: Request<Arc<State>>) -> TideResult {
     )?;
     flashes.push(Flash::Info(format!("Welcome back, {}", params.username)));
     swap_flashes(session, flashes)?;
-    session.regenerate();
+
+    // session.regenerate();
+    session.mark_for_regenerate();
 
     Ok(Redirect::new("/").into())
 }
@@ -96,6 +98,9 @@ pub async fn signout(mut request: Request<Arc<State>>) -> TideResult {
     delete_account(session)?;
     flashes.push(Flash::Info(format!("Signed out successfully.")));
     swap_flashes(session, flashes)?;
+
+    // session.regenerate();
+    session.mark_for_regenerate();
 
     Ok(Redirect::new("/").into())
 }

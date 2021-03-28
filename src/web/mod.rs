@@ -141,7 +141,9 @@ impl<State: 'static + Send + Sync + Clone> Middleware<State> for FormValidationM
         }
 
         request.set_body(body_bytes);
+        // let session = request.session().clone();
         let response = next.run(request).await;
+        // warn!("{:?}", session);
         Ok(response)
     }
 }

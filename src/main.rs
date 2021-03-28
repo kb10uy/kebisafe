@@ -1,4 +1,5 @@
 mod action;
+mod api;
 mod application;
 mod entity;
 mod middleware;
@@ -20,7 +21,7 @@ use argon2::{
 use clap::Clap;
 use log::debug;
 use rand::prelude::*;
-use tide::{http::cookies::SameSite, security::CorsMiddleware, sessions::SessionMiddleware, utils::After};
+use tide::{security::CorsMiddleware, sessions::SessionMiddleware, utils::After};
 
 #[async_std::main]
 async fn main() -> Result<()> {
@@ -42,12 +43,17 @@ async fn run_server(envs: Environments) -> Result<()> {
     debug!("Started to run server");
 
     let (state, secret_key) = State::new(&envs).await?;
-    let mut app = tide::with_state(state.clone());
 
     // Web Routes -------------------------------------------------------------
     // To enable HTTP method deformation,
     // we have to split route server and nest it at root.
     let mut web_routes = tide::with_state(state.clone());
+    web_routes.with({
+        let store = RedisStore::new(&envs.redis_uri).await?;
+        let middleware = SessionMiddleware::new(store, &secret_key).with_session_ttl(Some(Duration::from_secs(7200)));
+        middleware
+    });
+    web_routes.with(FormValidationMiddleware::new(state.cipher.clone()));
 
     // Root
     web_routes.at("/").get(web::endpoint::index);
@@ -69,33 +75,26 @@ async fn run_server(envs: Environments) -> Result<()> {
         .get(web::endpoint::media::media)
         .patch(web::endpoint::media::update)
         .delete(web::endpoint::media::delete);
-    // Web Routes -------------------------------------------------------------
 
     // API Routes -------------------------------------------------------------
     let mut api_routes = tide::with_state(state.clone());
 
     api_routes.at("/show");
-    // API Routes -------------------------------------------------------------
+
+    // Root App --------------------------------------------------------------
+    let mut app = tide::new();
 
     // Middlewares
     let graceful_shutdown = GracefulShutdownMiddleware::new();
     app.with(graceful_shutdown.clone());
     app.with(After(log_inner_error));
-    app.with({
-        let store = RedisStore::new(&envs.redis_uri).await?;
-        let middleware = SessionMiddleware::new(store, &secret_key)
-            .with_session_ttl(Some(Duration::from_secs(7200)))
-            .with_same_site_policy(SameSite::Lax);
-        middleware
-    });
-    app.with(FormValidationMiddleware::new(state.cipher.clone()));
     app.with(CorsMiddleware::new());
 
     // Routes
     app.at("/").nest(web_routes);
     app.at("/api").nest(api_routes);
-    app.at("/public").reset_middleware().serve_dir(&envs.public_dir)?;
-    app.at("/media").reset_middleware().serve_dir(&envs.media_dir)?;
+    app.at("/public").serve_dir(&envs.public_dir)?;
+    app.at("/media").serve_dir(&envs.media_dir)?;
 
     // Start server
     app.listen(envs.listen_at).await?;

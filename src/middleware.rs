@@ -84,6 +84,7 @@ impl<State: 'static + Send + Sync + Clone> Middleware<State> for GracefulShutdow
     async fn handle(&self, request: Request<State>, next: Next<'_, State>) -> TideResult {
         let _reserved = self.reserve().await?;
         let response = next.run(request).await;
+
         Ok(response)
     }
 }
