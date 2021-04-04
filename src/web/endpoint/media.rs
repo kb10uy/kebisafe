@@ -7,17 +7,21 @@ use crate::{
         session::{swap_flashes, Common, Flash},
     },
     application::State,
-    ensure_login, validate_form,
+    ensure_login,
+    entity::Media,
+    validate_form,
     web::{multipart::MultipartData, template, RequestPreParseExt},
 };
 
 use async_std::{fs, sync::Arc, task::spawn};
 
+use anyhow::Result;
 use image::ImageFormat;
 use log::debug;
 use serde::Deserialize;
 use tide::{
     http::{mime, StatusCode},
+    sessions::Session,
     Redirect, Request, Response, Result as TideResult,
 };
 use url::Url;
@@ -45,37 +49,62 @@ pub async fn list_media(mut request: Request<Arc<State>>) -> TideResult {
 /// `GET /m/:hash_id`
 /// Shows a media.
 pub async fn media(mut request: Request<Arc<State>>) -> TideResult {
+    #[derive(Deserialize)]
+    struct Parameters {
+        download: Option<bool>,
+    }
+
     debug!("Rendering /m/:id");
 
     let state = request.state().clone();
     let hash_id = request.param("hash_id").expect("hash_id must be set").to_string();
+    let query: Parameters = request.query()?;
     let session = request.session_mut();
 
-    let media_record = match fetch_media(&state.pool, &hash_id).await? {
-        Some(m) => m,
-        None => {
-            let flashes = vec![Flash::Error(format!("Media {} not found", hash_id))];
-            swap_flashes(session, flashes)?;
-            return Ok(Redirect::new("/").into());
-        }
+    let media_record = fetch_media(&state.pool, &hash_id).await?;
+    let response = if query.download.unwrap_or_default() {
+        media_download(state, media_record).await?
+    } else {
+        media_page(state, media_record, session)?
     };
+    Ok(response)
+}
 
-    let common = Common::new(&state, session, vec![])?;
-    let info = template::PageInfo::new(&state, &format!("/m/{}", media_record.hash_id))?
-        .with_title(&format!("Media #{}", media_record.hash_id))
-        .with_description(media_record.comment.as_deref().unwrap_or("<No comment>"))
-        .with_thumbnail(&Url::parse(&common.permalink_thumbnail(&media_record))?);
-    Ok(Response::builder(StatusCode::Ok)
-        .content_type(mime::HTML)
-        .body(
-            template::MediaShow {
-                info,
-                common,
-                media: media_record,
-            }
-            .call()?,
-        )
-        .build())
+/// Renders media page.
+fn media_page(state: Arc<State>, media: Option<Media>, session: &mut Session) -> Result<Response> {
+    if let Some(media_record) = media {
+        let common = Common::new(&state, session, vec![])?;
+        let info = template::PageInfo::new(&state, &format!("/m/{}", media_record.hash_id))?
+            .with_title(&format!("Media #{}", media_record.hash_id))
+            .with_description(media_record.comment.as_deref().unwrap_or("<No comment>"))
+            .with_thumbnail(&Url::parse(&common.permalink_thumbnail(&media_record))?);
+        let body = template::MediaShow {
+            info,
+            common,
+            media: media_record,
+        }
+        .call()?;
+        Ok(Response::builder(StatusCode::Ok).content_type(mime::HTML).body(body).build())
+    } else {
+        let flashes = vec![Flash::Error(format!("Media not found"))];
+        swap_flashes(session, flashes)?;
+        Ok(Redirect::new("/").into())
+    }
+}
+
+/// Returns an attachment response.
+async fn media_download(state: Arc<State>, media: Option<Media>) -> Result<Response> {
+    if let Some(media_record) = media {
+        let filename = format!("{}.{}", media_record.hash_id, media_record.extension);
+        let path = state.media_root.join(&filename);
+        let file = fs::read(path).await?;
+        Ok(Response::builder(StatusCode::Ok)
+            .header("Content-Disposition", format!("attachment; filename=\"{}\"", filename))
+            .body(file)
+            .build())
+    } else {
+        Ok(Response::builder(StatusCode::NotFound).body("Media not found").build())
+    }
 }
 
 /// POST `/upload`

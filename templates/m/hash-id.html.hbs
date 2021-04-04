@@ -4,6 +4,21 @@
     <h1>Kebisafe media: <code>{{ media.hash_id }}</code></h1>
 </div>
 
+<div class="row">
+    <div class="col-12 col-md-9 my-1">
+        <div class="input-group">
+            <input type="text" class="form-control" placeholder="Original media permalink"
+                aria-label="Original media permalink" aria-describedby="copyOriginalPermalink" id="originalPermalink"
+                value="{{ common.permalink_original(&media) }}" readonly>
+            <button class="btn btn-outline-secondary clipboard" type="button" id="copyOriginalPermalink"
+                data-clipboard-target="#originalPermalink">Copy</button>
+        </div>
+    </div>
+    <div class="col-12 col-md-3 d-grid mx-auto my-1">
+        <a href="/m/{{ media.hash_id }}?download=true" class="btn btn-primary">Download</a>
+    </div>
+</div>
+
 <div class="row text-center my-2">
     <div class="col" id="imageContainer">
         <img src="{{ common.permalink_original(&media) }}" alt="{{ media.hash_id }}" class="img-fluid">
@@ -30,18 +45,6 @@
                 <tr>
                     <th>Uploaded at</th>
                     <td>{{ media.uploaded.format("%Y/%m/%d %T (%z)").to_string() }}</td>
-                </tr>
-                <tr>
-                    <th class="align-middle">Original media permalink</th>
-                    <td>
-                        <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Original media permalink"
-                                aria-label="Original media permalink" aria-describedby="copyOriginalPermalink"
-                                id="originalPermalink" value="{{ common.permalink_original(&media) }}" readonly>
-                            <button class="btn btn-outline-secondary clipboard" type="button" id="copyOriginalPermalink"
-                                data-clipboard-target="#originalPermalink">Copy</button>
-                        </div>
-                    </td>
                 </tr>
                 {{#if let Some(_) = &common.account }}
                 <tr>
