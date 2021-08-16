@@ -5,117 +5,39 @@ authors = ["kb10uy <kb10uy@kb10uy.org>"]
 license = "MIT OR Apache-2.0"
 edition = "2018"
 
-# Dependencies - std extensions
+[dependencies]
+anyhow = "1.0.43"
+once_cell = "1.8.0"
+chrono = { version = "0.4.19", features = ["serde"] }
+regex = "1.5.4"
+rand = "0.8.4"
+image = "0.23.14"
+argon2 = "0.2.3"
+aes-gcm-siv = "0.10.2"
+password-hash = "0.2.2"
+data-encoding = "2.3.2"
+log = "0.4.14"
+pretty_env_logger = "0.4.0"
+dotenv = "0.15.0"
+clap = "3.0.0-beta.2"
+rpassword = "5.0.1"
+serde = { version = "1.0.127", features = ["derive"] }
+serde_json = "1.0.66"
+serde_urlencoded = "0.7.0"
+envy = "0.4.2"
+async-std = { version = "1.9.0", features = ["attributes"] }
+async-trait = "0.1.51"
+futures = "0.3.16"
+sqlx = { version = "0.5.5", features = ["runtime-async-std-native-tls", "sqlite", "postgres", "chrono"] }
+redis = { version = "0.21.0", features = ["async-std-comp"] }
+tide = "0.16.0"
+url = "2.2.2"
+mime_guess = "2.0.3"
+multipart = { version = "0.18.0", default-features = false, features = ["server"] }
+yarte = "0.15.4"
 
-[dependencies.anyhow]
-version = "1.0.38"
-
-[dependencies.once_cell]
-version = "1.7.2"
-
-[dependencies.chrono]
-version = "0.4.19"
-features = ["serde"]
-
-[dependencies.regex]
-version = "1.4.5"
-
-[dependencies.rand]
-version = "0.8.3"
-
-[dependencies.image]
-version = "0.23.14"
-
-[dependencies.argon2]
-version = "0.1.4"
-
-[dependencies.aes-gcm-siv]
-version = "0.9.0"
-
-[dependencies.password-hash]
-version = "0.1.2"
-
-[dependencies.data-encoding]
-version = "2.3.2"
-
-# Dependencies - CLI
-
-[dependencies.log]
-version= "0.4.14"
-
-[dependencies.pretty_env_logger]
-version = "0.4.0"
-
-[dependencies.dotenv]
-version = "0.15.0"
-
-[dependencies.clap]
-version = "3.0.0-beta.2"
-
-[dependencies.rpassword]
-version = "5.0.1"
-
-# Dependencies - serde
-
-[dependencies.serde]
-version = "1.0.124"
-features = ["derive"]
-
-[dependencies.serde_json]
-version = "1.0.64"
-
-[dependencies.serde_urlencoded]
-version = "0.7.0"
-
-[dependencies.envy]
-version = "0.4.2"
-
-# Dependencies - async
-
-[dependencies.async-std]
-version = "1.9.0"
-features = ["attributes"]
-
-[dependencies.async-trait]
-version = "0.1.48"
-
-[dependencies.futures]
-version = "0.3.13"
-
-[dependencies.sqlx]
-version = "0.5.1"
-features = ["runtime-async-std-native-tls", "sqlite", "postgres", "chrono"]
-
-[dependencies.redis]
-version = "0.20.0"
-features = ["async-std-comp"]
-
-# Dependencies - Web
-
-[dependencies.tide]
-version = "0.16.0"
-
-[dependencies.url]
-version = "2.2.1"
-
-[dependencies.mime_guess]
-version = "2.0.3"
-
-# TODO: Consider about async variants
-[dependencies.multipart]
-version = "0.17.1"
-default-features = false
-features = ["server"]
-
-[dependencies.yarte]
-version = "0.15.3"
-
-# Build dependencies
-
-[build-dependencies.yarte]
-version = "0.15.3"
-
-# Other
+[build-dependencies]
+yarte = "0.15.4"
 
 [profile.dev.package.image]
 opt-level = 3
