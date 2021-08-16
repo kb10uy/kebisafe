@@ -9,7 +9,7 @@ use crate::{
     api::ApiAuthorizationMiddleware,
     application::{Arguments, Environments, State, Subcommand},
     middleware::{log_inner_error, GracefulShutdownMiddleware},
-    web::{deform_http_method, session::RedisStore, FormPreparseMiddleware, CsrfProtectionMiddleware},
+    web::{deform_http_method, session::RedisStore, CsrfProtectionMiddleware, FormPreparseMiddleware},
 };
 
 use std::time::Duration;
@@ -19,6 +19,8 @@ use argon2::{
     password_hash::{PasswordHasher, SaltString},
     Argon2,
 };
+use async_ctrlc::CtrlC;
+use async_std::prelude::*;
 use clap::Clap;
 use log::debug;
 use rand::prelude::*;
@@ -109,8 +111,15 @@ async fn run_server(envs: Environments) -> Result<()> {
     app.at("/media").serve_dir(&envs.media_dir)?;
 
     // Start server
-    app.listen(envs.listen_at).await?;
-    graceful_shutdown.terminate().await;
+    let app_future = async { app.listen(envs.listen_at).await };
+    let shutdown_future = async {
+        let signal = CtrlC::new().expect("Cannot create signal");
+        signal.await;
+        graceful_shutdown.terminate().await;
+        Ok(())
+    };
+    app_future.race(shutdown_future).await?;
+
     Ok(())
 }
 
