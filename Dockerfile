@@ -1,5 +1,5 @@
 # Build backend
-FROM rust:1.50 AS builder
+FROM rust:1.54 AS builder
 WORKDIR /build
 COPY . .
 RUN cargo install --path .
