@@ -8,7 +8,7 @@ use aes_gcm_siv::{
     Aes256GcmSiv,
 };
 use anyhow::Result;
-use clap::Clap;
+use clap::{AppSettings, Clap};
 use data_encoding::HEXLOWER_PERMISSIVE;
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -29,8 +29,10 @@ pub struct Environments {
     pub api_token: String,
 }
 
-/// Commandline arguments.
+/// Minimal, single-user, and fast image upload service
 #[derive(Debug, Clap)]
+#[clap(version, author)]
+#[clap(setting = AppSettings::ColoredHelp)]
 pub struct Arguments {
     /// Executing subcommand (default to `serve`)
     #[clap(subcommand)]
