@@ -16,6 +16,7 @@ clap = { version = "3.1.12", features = ["derive"] }
 data-encoding = "2.3.2"
 dotenv = "0.15.0"
 envy = "0.4.2"
+flexi_logger = "0.22.3"
 futures = "0.3.21"
 image = "0.24.1"
 log = "0.4.16"
@@ -36,8 +37,6 @@ url = "2.2.2"
 yarte = { git = "https://github.com/botika/yarte", branch = "master" }
 
 chrono = { version = "0.4.19", features = ["serde"] }
-pretty_env_logger = "0.4.0"
-
 
 [build-dependencies]
 yarte = { git = "https://github.com/botika/yarte", branch = "master" }

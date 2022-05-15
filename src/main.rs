@@ -22,6 +22,7 @@ use argon2::{
 use async_ctrlc::CtrlC;
 use async_std::prelude::*;
 use clap::Parser;
+use flexi_logger::Logger;
 use log::debug;
 use rand::prelude::*;
 use tide::{
@@ -34,7 +35,8 @@ use tide::{
 #[async_std::main]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
-    pretty_env_logger::init();
+    Logger::try_with_env()?.start()?;
+
     let envs: Environments = envy::from_env()?;
     let args = Arguments::parse();
 
