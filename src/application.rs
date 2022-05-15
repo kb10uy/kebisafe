@@ -8,7 +8,7 @@ use aes_gcm_siv::{
     Aes256GcmSiv,
 };
 use anyhow::Result;
-use clap::{AppSettings, Clap};
+use clap::{Parser, Subcommand};
 use data_encoding::HEXLOWER_PERMISSIVE;
 use serde::Deserialize;
 use sqlx::PgPool;
@@ -30,17 +30,16 @@ pub struct Environments {
 }
 
 /// Minimal, single-user, and fast image upload service
-#[derive(Debug, Clap)]
+#[derive(Debug, Parser)]
 #[clap(version, author)]
-#[clap(setting = AppSettings::ColoredHelp)]
 pub struct Arguments {
     /// Executing subcommand (default to `serve`)
     #[clap(subcommand)]
-    pub subcommand: Option<Subcommand>,
+    pub subcommand: Option<SubCommand>,
 }
 
-#[derive(Debug, Clap)]
-pub enum Subcommand {
+#[derive(Debug, Subcommand)]
+pub enum SubCommand {
     /// Starts Kebisafe server
     Serve,
 

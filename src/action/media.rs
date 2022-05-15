@@ -4,7 +4,11 @@ use async_std::path::Path;
 use std::{fs::File as SyncFile, io::BufWriter as SyncBufWriter, path::Path as SyncPath};
 
 use anyhow::{bail, Result};
-use image::{gif::GifEncoder, imageops::FilterType, jpeg::JpegEncoder, png::PngEncoder, DynamicImage, GenericImageView, ImageFormat};
+use image::{
+    codecs::{gif::GifEncoder, jpeg::JpegEncoder, png::PngEncoder},
+    imageops::FilterType,
+    DynamicImage, GenericImageView, ImageEncoder, ImageFormat,
+};
 use mime_guess::MimeGuess;
 
 const ALLOWED_TYPES: &[(&str, ImageFormat)] = &[
@@ -89,7 +93,7 @@ pub fn save_image(image: &DynamicImage, format: ImageFormat, path: impl AsRef<Sy
     match format {
         ImageFormat::Png => {
             let encoder = PngEncoder::new(target_file);
-            encoder.encode(image.as_bytes(), width, height, color_type)?;
+            encoder.write_image(image.as_bytes(), width, height, color_type)?;
         }
         ImageFormat::Jpeg => {
             let mut encoder = JpegEncoder::new(&mut target_file);

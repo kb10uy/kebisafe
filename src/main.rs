@@ -7,7 +7,7 @@ mod web;
 
 use crate::{
     api::ApiAuthorizationMiddleware,
-    application::{Arguments, Environments, State, Subcommand},
+    application::{Arguments, Environments, State, SubCommand},
     middleware::{log_inner_error, GracefulShutdownMiddleware},
     web::{deform_http_method, session::RedisStore, CsrfProtectionMiddleware, FormPreparseMiddleware},
 };
@@ -21,7 +21,7 @@ use argon2::{
 };
 use async_ctrlc::CtrlC;
 use async_std::prelude::*;
-use clap::Clap;
+use clap::Parser;
 use log::debug;
 use rand::prelude::*;
 use tide::{
@@ -39,8 +39,8 @@ async fn main() -> Result<()> {
     let args = Arguments::parse();
 
     match args.subcommand {
-        Some(Subcommand::Serve) => run_server(envs).await?,
-        Some(Subcommand::GeneratePassword) => generate_password().await?,
+        Some(SubCommand::Serve) => run_server(envs).await?,
+        Some(SubCommand::GeneratePassword) => generate_password().await?,
         None => run_server(envs).await?,
     }
 
@@ -127,12 +127,12 @@ async fn generate_password() -> Result<()> {
     debug!("Generating password hash");
 
     let mut rng = thread_rng();
-    let raw_password = rpassword::read_password_from_tty(Some("Type your password: "))?;
+    let raw_password = rpassword::prompt_password("Type your password: ")?;
 
     let argon2 = Argon2::default();
     let salt = SaltString::generate(&mut rng);
     let password_hash = argon2
-        .hash_password_simple(raw_password.as_bytes(), salt.as_ref())
+        .hash_password(raw_password.as_bytes(), salt.as_ref())
         .map_err(|_| format_err!("Failed to generate password hash"))?;
 
     println!("Success! Your password hash is below:");
