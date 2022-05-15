@@ -3,12 +3,12 @@
 use crate::{action::media::ValidatedImage, entity::Media};
 
 use anyhow::{anyhow, Result};
-use chrono::prelude::*;
 use image::GenericImageView;
 use log::info;
 use once_cell::sync::Lazy;
 use rand::prelude::*;
 use sqlx::{error::DatabaseError, Error as SqlxError, PgPool};
+use time::OffsetDateTime;
 
 static HASH_CHARS: Lazy<Box<[char]>> = Lazy::new(|| "0123456789abcdefghijklmnopqrstuvwxyz".chars().collect());
 const HASH_MIN_LENGTH: usize = 6;
@@ -31,7 +31,7 @@ pub async fn fetch_media(pool: &PgPool, hash_id: &str) -> Result<Option<Media>> 
 }
 
 /// Fetches media list.
-pub async fn fetch_media_list(pool: &PgPool, latest: Option<DateTime<Local>>, limit: usize) -> Result<Vec<Media>> {
+pub async fn fetch_media_list(pool: &PgPool, latest: Option<OffsetDateTime>, limit: usize) -> Result<Vec<Media>> {
     let query_str = if latest.is_some() {
         "SELECT * FROM media WHERE uploaded < $1 AND is_private = FALSE ORDER BY uploaded DESC LIMIT $2;"
     } else {
@@ -81,7 +81,7 @@ pub async fn reserve_media_record(pool: &PgPool, validated_image: &ValidatedImag
         .bind(width as i32)
         .bind(height as i32)
         .bind(validated_image.filesize as i32)
-        .bind(Local::now())
+        .bind(OffsetDateTime::now_local()?)
         .fetch_one(pool)
         .await;
 

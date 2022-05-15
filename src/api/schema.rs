@@ -3,9 +3,9 @@
 use crate::{application::State, entity::Media};
 
 use anyhow::Result;
-use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 use tide::{http::StatusCode, Response};
+use time::OffsetDateTime;
 use url::Url;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -38,7 +38,7 @@ pub struct ShowMediaResponse {
     pub filesize: usize,
     pub private: bool,
     pub comment: Option<String>,
-    pub uploaded: DateTime<Local>,
+    pub uploaded: OffsetDateTime,
 }
 
 impl ShowMediaResponse {

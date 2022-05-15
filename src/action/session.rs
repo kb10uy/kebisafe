@@ -9,11 +9,11 @@ use aes_gcm_siv::{
     Aes256GcmSiv,
 };
 use anyhow::{ensure, format_err, Result};
-use chrono::prelude::*;
 use data_encoding::BASE64;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 use tide::sessions::Session;
+use time::OffsetDateTime;
 use url::Url;
 
 const TOKEN_EXPIARY: i64 = 86400;
@@ -74,7 +74,7 @@ impl Common {
 
 /// Generates a CSRF token.
 pub fn generate_csrf_token(cipher: &Aes256GcmSiv, session: &Session) -> Result<String> {
-    let plain_text = format!("{} {}", session.id(), Local::now().timestamp().to_string());
+    let plain_text = format!("{} {}", session.id(), OffsetDateTime::now_local()?.unix_timestamp().to_string());
 
     let nonce = random::<[u8; 12]>();
     let nonce = GenericArray::from_slice(&nonce);
@@ -105,7 +105,7 @@ pub fn verify_csrf_token(cipher: &Aes256GcmSiv, session: &Session, token: &str) 
     let token_sid = params[0];
     ensure!(sid == token_sid, "Invalid token; expected \"{}\", found \"{}\"", sid, token_sid);
 
-    let now = Local::now().timestamp();
+    let now = OffsetDateTime::now_local()?.unix_timestamp();
     let token_time = params[1].parse().ok().unwrap_or(0);
     ensure!(now - token_time <= TOKEN_EXPIARY, "Expired token");
 

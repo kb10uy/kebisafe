@@ -1,5 +1,5 @@
-use chrono::prelude::*;
 use sqlx::prelude::*;
+use time::OffsetDateTime;
 
 /// Represents a media record.
 #[derive(Debug, Clone, FromRow)]
@@ -29,7 +29,7 @@ pub struct Media {
     pub comment: Option<String>,
 
     /// Uploaded date
-    pub uploaded: DateTime<Local>,
+    pub uploaded: OffsetDateTime,
 }
 
 #[allow(dead_code)]

@@ -44,9 +44,14 @@
                 </tr>
                 <tr>
                     <th>Uploaded at</th>
-                    <td>{{ media.uploaded.format("%Y/%m/%d %T (%z)").to_string() }}</td>
+                    <td>{{
+                        media.uploaded.format(
+                            time::macros::format_description!("[year]/[month]/[day] [hour]:[minute]:[second]")
+                        )
+                        .expect("Invalid format")
+                    }}</td>
                 </tr>
-                {{#if let Some(_) = &common.account }}
+                {{#if let Some(_) = common.account }}
                 <tr>
                     <th>Additional manipulation</th>
                     <td>
